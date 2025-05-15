@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<link rel="stylesheet" href="/styles.css">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Device Settings</title>
+
+</head>
+
+<body>
+  <div class="header">
+    <a href="/form1"><img src="http://{ipAddress}/logo" alt="Logo"></a>
+
+    <!-- <div>{ipAddress}</div> -->
+    <textarea style="display:none" id="config_json">{config_json}</textarea>
+
+    <!-- <div><a style="color:red;text-decoration:none" href="/restart">Restart</a></div> -->
+
+
+    <div>Version:<span style="color:yellowgreen">{firmWareVersion}</span></div>
+    <div>Company:<span style="color:yellowgreen">{cloud_company_name}</span></div>
+    <div>Expire on:<span style="color:yellowgreen">{cloud_account_expire}</span></div>
+    <div>Days left:<span style="color:yellowgreen">{cloudAccountActiveDaysRemaining}</span></div>
+
+
+
+    <div><a style="color:orangered;text-decoration:none" href="/updatefirmware">Update FirmWare</a></div>
+
+
+    <div class="time">
+      <div id="time">Loading time...</div>
+    </div>
+    <div><a style="color:red;text-decoration:none" href="/logout">Logout</a></div>
+  </div>
+
+  <script>
+    function updateTime() {
+      const now = new Date();
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const seconds = now.getSeconds().toString().padStart(2, '0');
+
+      // Format the time as HH:MM:SS
+      const timeString = `${hours}:${minutes}:${seconds}`;
+
+      // Display the time in the HTML element
+      document.getElementById('time').textContent = timeString;
+    }
+
+    // Update time immediately
+    updateTime();
+
+    // Update time every second (1000 milliseconds)
+    setInterval(updateTime, 1000);
+  </script>
