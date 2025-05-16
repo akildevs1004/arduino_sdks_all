@@ -308,30 +308,42 @@
             </form>
         </div>
         <div class=tabcontent id=tab2>
-            <h3>Relay Settings</h3>
-            <div>
-                <div>
-                    <p>Relay D1
-                        <a href='#' onclick="updateRelayStatus(0,'relaystatus0');"><button>
-                                <div id="relaystatus0">OFF</div>
-                            </button></a>
-                    </p>
-                    <p>Relay D2
-                        <a href='#' onclick="updateRelayStatus(1,'relaystatus1');"><button>
-                                <div id="relaystatus1">OFF</div>
-                            </button></a>
-                    </p>
-                    <p>Relay D3
-                        <a href='#' onclick="updateRelayStatus(2,'relaystatus2');"><button>
-                                <div id="relaystatus2">OFF</div>
-                            </button></a>
-                    </p>
-                    <p>Relay D4
-                        <a href='#' onclick="updateRelayStatus(3,'relaystatus3');"><button>
-                                <div id="relaystatus3">OFF</div>
-                            </button></a>
-                    </p>
-                </div>
+            <div style="width:100%; background-color:#ddd">
+                <table>
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Relay List</div>
+
+                                <div>
+                                    <div>
+                                        <p>FAN (Relay 1)
+                                            <a href='#' onclick="updateRelayStatus(0,'relaystatus0');"><button>
+                                                    <div id="relaystatus0">OFF</div>
+                                                </button></a>
+                                        </p>
+                                        <p>AC (Relay 2)
+                                            <a href='#' onclick="updateRelayStatus(1,'relaystatus1');"><button>
+                                                    <div id="relaystatus1">OFF</div>
+                                                </button></a>
+                                        </p>
+                                        <p>Light (Relay 3)
+                                            <a href='#' onclick="updateRelayStatus(2,'relaystatus2');"><button>
+                                                    <div id="relaystatus2">OFF</div>
+                                                </button></a>
+                                        </p>
+                                        <p>Siren (Relay 4)
+                                            <a href='#' onclick="updateRelayStatus(3,'relaystatus3');"><button>
+                                                    <div id="relaystatus3">OFF</div>
+                                                </button></a>
+                                        </p>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </td>
+                    </tr>
+                </table>
             </div>
         </div>
         <script>function openTabContent(e, t) { var n, a, l; for (a = document.getElementsByClassName("tabcontent"), n = 0; n < a.length; n++)a[n].style.display = "none"; for (l = document.getElementsByClassName("tablinks"), n = 0; n < l.length; n++)l[n].className = l[n].className.replace(" active", ""); document.getElementById(t).style.display = "block", e.currentTarget.className += " active" } document.getElementById("defaultOpen").click()</script>
@@ -606,10 +618,13 @@
 
 
 
-            document.getElementById("relaystatus0").innerHTML = jsonData.relay0 ? 'ON' : 'OFF';
-            document.getElementById("relaystatus1").innerHTML = jsonData.relay1 ? 'ON' : 'OFF';
-            document.getElementById("relaystatus2").innerHTML = jsonData.relay2 ? 'ON' : 'OFF';
-            document.getElementById("relaystatus3").innerHTML = jsonData.relay3 ? 'ON' : 'OFF';
+            for (let i = 0; i < 4; i++) {
+                const element = document.getElementById("relaystatus" + i);
+                const isOn = jsonData["relay" + i];
+                element.innerHTML = isOn ? 'ON' : 'OFF';
+                // element.style.backgroundColor = isOn ? 'green' : 'red';
+                // element.style.color = 'white'; // ✅ Set font color to white
+            }
 
 
 
@@ -667,16 +682,7 @@
 
         return false; // Allow submission
     }
-    function fetchData() {
-        fetch('http://{ipAddress}/getconfig') // Replace with your API
-            .then(response => response.json())
-            .then(data => {
-                console.log('Fetched data:', data);
-            })
-            .catch(error => {
-                console.error('Error fetching data:', error);
-            });
-    }
+
     function updateRelayStatus(relayid, divID) {
 
 
@@ -687,7 +693,22 @@
 
                 document.getElementById(divID).innerHTML = document.getElementById(divID).innerHTML == 'ON' ? 'OFF' : 'ON';
 
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+            });
+    }
+    function fetchData() {
+        fetch('http://{ipAddress}/getconfig') // Replace with your actual IP or hostname
+            .then(response => response.json())
+            .then(data => {
                 console.log('Fetched data:', data);
+
+                // If config_json is a <textarea>
+                document.getElementById("config_json").value = JSON.stringify(data, null, 2);
+
+                // Call your config loader
+                loadConfigFileData();
             })
             .catch(error => {
                 console.error('Error fetching data:', error);
@@ -695,7 +716,7 @@
     }
 
     // Call fetchData every 5000 milliseconds (5 seconds)
-    setInterval(fetchData, 1000 * 15);
+    setInterval(fetchData, 1000 * 5);
 
 
 </script>

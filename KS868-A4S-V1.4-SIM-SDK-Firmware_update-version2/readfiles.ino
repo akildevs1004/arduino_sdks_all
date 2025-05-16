@@ -163,6 +163,11 @@ void saveConfig(String filename, String data) {
 // Function to read, update, and write back JSON data using String for filenames
 void updateJsonConfig(String filename, String param, String value) {
 
+  if (config[param] == value)
+  {
+     return;
+  }
+
 
   // Open the file for reading
   File configFile = LittleFS.open("/config.json", "r");

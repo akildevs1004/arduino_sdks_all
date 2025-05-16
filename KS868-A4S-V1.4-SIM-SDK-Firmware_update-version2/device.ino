@@ -8,6 +8,10 @@ ModbusMaster sensor1;  // Address 4 (changed)
 ModbusMaster sensor2;  // Address 2
 ModbusMaster sensor3;  // Address 3
 
+
+unsigned long lastSensorReadTime = 0;
+const unsigned long sensorReadInterval = 1000*10; // 10 seconds
+
 void preTransmission() {
   digitalWrite(MAX485_DE, 1);
 }
@@ -74,13 +78,20 @@ void readSensor(ModbusMaster& node, const char* name) {
 }
 
 void Deviceloop() {
-  readSensor(sensor1, "Sensor 1 (Addr 4)");
-  delay(100);
-  readSensor(sensor2, "Sensor 2 (Addr 2)");
-  delay(100);
-  readSensor(sensor3, "Sensor 3 (Addr 3)");
-  delay(100);  // Wait before repeating
+unsigned long currentMillis = millis();
 
-  relayLoop();
+  if (currentMillis - lastSensorReadTime >= sensorReadInterval) {
+    lastSensorReadTime = currentMillis;
+
+    // Read all sensors
+    readSensor(sensor1, "Sensor 1 (Addr 4)");
+    delay(100);
+    readSensor(sensor2, "Sensor 2 (Addr 2)");
+    delay(100);
+    readSensor(sensor3, "Sensor 3 (Addr 3)");
+    delay(100);
+  }
+
+  // relayLoop();
   ///networkLoop();
 }

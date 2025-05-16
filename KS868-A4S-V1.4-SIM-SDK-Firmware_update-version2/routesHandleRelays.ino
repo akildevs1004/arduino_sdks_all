@@ -79,6 +79,18 @@ void checkDI1() {
 
 //   server.send(200, "text/html", page);
 // }
+void updateRelayStatusAction(int relayNum,bool status) {
+
+    Serial.println(String(relayNum)+":"+String(status) );
+
+
+  if (relayNum >= 0 && relayNum < 4) {
+    
+    pcf8574_RE1.digitalWrite(relayNum, status ? LOW : HIGH);   
+     
+    updateJsonConfig("config.json", "relay" + String(relayNum), status ?  "true": "false");
+  }
+}
 void updateRelayStatus(int relayNum) {
 
   if (relayNum >= 0 && relayNum < 4) {
@@ -86,6 +98,8 @@ void updateRelayStatus(int relayNum) {
     pcf8574_RE1.digitalWrite(relayNum, relayStates[relayNum] ? LOW : HIGH);
 
     Serial.println(String(relayNum)+":"+relayStates[relayNum]);
+
+     
     updateJsonConfig("config.json", "relay" + String(relayNum), relayStates[relayNum] ==LOW?  "false": "true");
   }
 }
@@ -132,5 +146,5 @@ void relaysSetup() {
   Serial.println("Relay Page End----------------------");
 }
 
-void relayLoop() {
-}
+// void relayLoop() {
+// }

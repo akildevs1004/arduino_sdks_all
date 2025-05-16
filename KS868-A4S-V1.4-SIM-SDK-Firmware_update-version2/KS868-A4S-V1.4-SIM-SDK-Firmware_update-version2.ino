@@ -77,13 +77,14 @@ void setup() {
   routes();  // Define Routes and handlers
   server.begin();
   Serial.println("HTTP Server started");
-  
+
 
   if (WiFi.status() == WL_CONNECTED) {
 
     delay(1000);
     updateJsonConfig("config.json", "ipaddress", DeviceIPNumber);
     updateJsonConfig("config.json", "firmWareVersion", firmWareVersion);
+    updateJsonConfig("config.json", "internet", "online");
 
     // configTime(0, 0, "pool.ntp.org");
     // delay(2000);  // Wait for NTP sync
@@ -95,8 +96,7 @@ void setup() {
 
     socketConnectServer();
     handleHeartbeat();
-    //getDeviceAccoutnDetails();
-
+    getDeviceAccountDetails();
     updateFirmWaresetup();
     uploadHTMLsetup();
     cloudAccountActiveDaysRemaining = 100;
@@ -116,22 +116,30 @@ void loop() {
 
   if (WiFi.status() == WL_CONNECTED || USE_ETHERNET) {
 
-    // if (cloudAccountActiveDaysRemaining > 0) {
+     if(config["internet"]!="online")
+      updateJsonConfig("config.json", "internet", "online");
 
-    //   handleHeartbeat();
-    //   updateFirmWareLoop();
+    if (cloudAccountActiveDaysRemaining > 0) {
 
-    //   unsigned long currentMillis = millis();
+      handleHeartbeat();
+      updateFirmWareLoop();
+
+      unsigned long currentMillis = millis();
 
 
-    //   if (currentMillis - lastRun >= interval) {
-    //     lastRun = currentMillis;
-    //     // getDeviceAccoutnDetails();
-    //   }
-    // }
+      if (currentMillis - lastRun >= interval) {
+        lastRun = currentMillis;
+        // getDeviceAccoutnDetails();
+      }
+    }
 
     // deviceReadSensorsLoop();
     delay(200);  // Non-blocking delay
+  }
+  else
+  {  if(config["internet"]!="offline")
+     updateJsonConfig("config.json", "internet", "offline");
+
   }
 }
 

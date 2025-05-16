@@ -103,13 +103,18 @@ void socketDeviceHeartBeatToServer() {
     heartbeatDoc["serialNumber"] = config["device_serial_number"];
     heartbeatDoc["type"] = "heartbeat";
     heartbeatDoc["config"] = deviceConfigContent;  // ////////readConfig("config.json");
-    heartbeatDoc["sensor_data"] = sensorData;  // ////////readConfig("config.json");    
+    heartbeatDoc["sensor_data"] = sensorData;      // ////////readConfig("config.json");
 
     String heartbeatData;
     serializeJson(heartbeatDoc, heartbeatData);
 
     client.println(heartbeatData);
     //Serial.println("Sent heartbeat: ");
+    if (config["cloud"] != "online")
+      updateJsonConfig("config.json", "cloud", "online");
+    if (config["internet"] != "online")
+      updateJsonConfig("config.json", "internet", "online");
+
 
 
   } else {
@@ -117,11 +122,14 @@ void socketDeviceHeartBeatToServer() {
     socketConnectionStatus = "Disconnected";
 
     updateJsonConfig("config.json", "socketConnectionStatus", "Disconnected");
+
+    if (config["cloud"] != "offline")
+      updateJsonConfig("config.json", "cloud", "offline");
   }
 }
 
 void processSocketServerRequests() {
-  
+
   ///////////////////socketVerifyConnection();
   //Serial.println("Checking Request from server:--------------------------------------- ");
   if (client.connected() && client.available()) {
@@ -165,7 +173,7 @@ void updateConfigServerToDevice(String message) {
     if (action == "UPDATE_CONFIG") {
       // Update the config file
       JsonObject configCloudServer = doc["config"];
-    
+
 
       for (JsonPair kv : configCloudServer) {
         const char* key = kv.key().c_str();  // Get the key
@@ -177,6 +185,12 @@ void updateConfigServerToDevice(String message) {
         Serial.print(", Value: ");
         Serial.println(value.as<String>());
         updateJsonConfig("config.json", key, value);
+        if (String(key).startsWith("relay")) {
+          int relayNum = String(key).substring(5).toInt();  // extract number after "relay"
+          if (relayNum >= 0 && relayNum < 4) {
+            updateRelayStatusAction(relayNum, value);
+          }
+        }
       }
     }
   }
@@ -185,7 +199,7 @@ void updateConfigServerToDevice(String message) {
   // loadConfig();  //update from config file
   readConfig("config.json");
   socketDeviceHeartBeatToServer();
-  handleRestartDevice();
+  ///////handleRestartDevice();
 }
 void sendResponseToServerDeviceConfiguration(const String& jsonString) {
   DynamicJsonDocument doc(1024);
@@ -217,7 +231,7 @@ void sendResponseToServerDeviceConfiguration(const String& jsonString) {
       configDoc["serialNumber"] = device_serial_number;
       configDoc["type"] = "config";
       configDoc["config"] = deviceConfigContent;  //readConfig("config.json");
-    configDoc["sensor_data"] = sensorData;  //  
+      configDoc["sensor_data"] = sensorData;      //
 
 
       String configData;
@@ -247,7 +261,7 @@ void handleHeartbeat() {
     previousHeartbeatMillis = currentMillis;
     socketDeviceHeartBeatToServer();
   }
-  
+
 
   unsigned long currentMillisSocket = millis();
 
@@ -256,4 +270,3 @@ void handleHeartbeat() {
     processSocketServerRequests();
   }
 }
- 

@@ -23,7 +23,8 @@ void routes() {
     int relayNum = relay.toInt();
     updateRelayStatus(relayNum);
 
-    server.send(200, "application/text", "Updated");  // your JSON config
+    String response = "{\"relay" + String(relayNum) + "\":\"updated\"}";
+  server.send(200, "application/json", response);
   });
 
 
@@ -364,4 +365,4 @@ void handleLogoImage() {
 
   server.streamFile(file, "image/jpeg");  // Send the file over HTTP
   file.close();
-}
+} 
