@@ -1,0 +1,50 @@
+<div class="container">
+  <span style="width:30%;text-align:left;float:left">
+    <h1> Update Firmware - Upload Bin File</h1>
+  </span>
+  <br />
+  <form id='uploadForm' method='POST' action='/updatefirmwareSubmit' enctype='multipart/form-data'>
+    <input type='file' name='update' accept='.bin'>
+    <button type='submit' class='btn'>Update Firmware</button>
+  </form>
+  <div class='progress-container'>
+    <div id='progressBar' class='progress-bar'>0%</div>
+  </div>
+  <div id='status'></div>
+
+  <a href='/restart'>Restart</a>
+
+  <br />
+
+  <div><a style=" text-decoration:none" href="/uploadhtmlfiles">Upload Html Files</a></div>
+
+</div>
+<script>
+  document.getElementById('uploadForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var formData = new FormData(this);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/updatefirmwareSubmit', true);
+    xhr.upload.onprogress = function (e) {
+      if (e.lengthComputable) {
+        var percent = Math.round((e.loaded / e.total) * 100);
+        document.getElementById('progressBar').style.width = percent + '%';
+        document.getElementById('progressBar').innerHTML = percent + '%';
+        document.getElementById('status').innerHTML = 'Uploading: ' + percent + '%';
+      }
+    };
+    xhr.onload = function () {
+      if (xhr.status == 200) {
+        document.getElementById('status').innerHTML = 'Update complete! Device will reboot...';
+
+
+      } else {
+        document.getElementById('status').innerHTML = 'Error: ' + xhr.responseText;
+      }
+    };
+    xhr.send(formData);
+  });
+</script>
+</body>
+
+</html>

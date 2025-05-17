@@ -8,8 +8,6 @@ void routes() {
   server.on("/submit-form1", HTTP_POST, handleForm1Submit);
   // server.on("/submit-form2", HTTP_POST, handleForm2Submit);
   server.on("/styles.css", HTTP_GET, handleCSS);
-  server.on("/script.js", HTTP_GET, handleJS);
-
   server.on("/status", HTTP_GET, handleStatus);
   server.on("/logo", HTTP_GET, handleLogoImage);
 
@@ -26,13 +24,10 @@ void routes() {
     updateRelayStatus(relayNum);
 
     String response = "{\"relay" + String(relayNum) + "\":\"updated\"}";
-    server.send(200, "application/json", response);
+  server.send(200, "application/json", response);
   });
 
-  server.on("/getsensors", HTTP_GET, []() {
-    server.sendHeader("Access-Control-Allow-Origin", "*");  // Allow all origins
-    server.send(200, "application/json", sensorData);       // your JSON config
-  });
+
 
   // server.on("/getconfig", HTTP_GET, handleGetConfig);
 
@@ -118,11 +113,6 @@ void handleLoginPage() {
 void handleLogin() {
   String user = server.arg("user");
   String pass = server.arg("pass");
-
-  Serial.println(user + "=" + USERNAME);
-  Serial.println(pass + "=" + PASSWORD);
-
-
 
   if (user == USERNAME && pass == PASSWORD) {
     loginErrorMessage = "";
@@ -235,10 +225,6 @@ void handleForm1Submit() {
   doc["temperature_alert_sms"] = server.hasArg("temperature_alert_sms");
   doc["temperature_alert_call"] = server.hasArg("temperature_alert_call");
   doc["temperature_alert_whatsapp"] = server.hasArg("temperature_alert_whatsapp");
-  doc["max_temperature_sensor_count"] = server.hasArg("max_temperature_sensor_count");
-
-
-
 
   doc["humidity_checkbox"] = server.hasArg("humidity_checkbox");
   doc["humidity_alert_sms"] = server.hasArg("humidity_alert_sms");
@@ -339,12 +325,6 @@ void handleCSS() {
   }
   server.send(200, "text/css", css);
 }
-void handleJS() {
-  String js = readFile("/script.js");
-  server.send(200, "text/javascript", js);  // Use correct MIME type
-}
-
-
 
 
 void handleStatus() {
@@ -385,119 +365,4 @@ void handleLogoImage() {
 
   server.streamFile(file, "image/jpeg");  // Send the file over HTTP
   file.close();
-}
-
- 
-
-const char* host = serverURL.c_str();
- 
-
-void sendPostRequest(const char* path, String payload) {
-  // For testing: skip certificate verification
-  // client.setInsecure();  // ❗ONLY USE IN DEVELOPMENT
-
-  if (!client.connect(host, 443)) {
-    Serial.println(F("❌ HTTPS connection failed"));
-    return;
-  }
-
-  // Send HTTP POST request
-  client.println("POST " + String(path) + " HTTP/1.1");
-  client.println("Host: " + String(host));
-  client.println("User-Agent: ESP32");
-  client.println("Content-Type: application/json");
-  client.print("Content-Length: ");
-  client.println(payload.length());
-  client.println(); // End of headers
-  client.println(payload); // Body
-
-  // Wait for response
-  unsigned long timeout = millis();
-  while (client.available() == 0) {
-    if (millis() - timeout > 5000) {
-      Serial.println(F("❌ Timeout"));
-      client.stop();
-      return;
-    }
-  }
-
-  // Read response
-  Serial.println(F("✅ Server response:"));
-  while (client.available()) {
-    String line = client.readStringUntil('\n');
-    Serial.println(line);
-  }
-
-  client.stop();
-}
-
-void sendTemperatureDataToServer(String jsonData) {
-
-
-  // // Base payload
-  // StaticJsonDocument<256> doc;
-  // doc["serialNumber"] = device_serial_number;
-  // doc["humidity"] = humidity;
-  // doc["temperature"] = temperature;
-  // doc["doorOpen"] = doorOpen;
-  // doc["waterLeakage"] = waterLeakage;
-  // doc["acPowerFailure"] = acPowerFailure;
-
-  // // Add temperature alarm if threshold exceeded
-  // if (temperature >= TEMPERATURE_THRESHOLD) {
-  //   doc["temperature_alarm"] = "1";
-  // }
-
-  // String jsonData;
-  // serializeJson(doc, jsonData);
-
-  // Serial.println("Sending: " + jsonData);
-
-  // http.begin(serverURL + "/alarm_device_status");
-  // http.addHeader("Content-Type", "application/json");
-  // int httpCode = http.POST(jsonData);
-
-  // if (httpCode > 0) {
-  //   Serial.println("✅ HTTP Response: " + String(httpCode));
-  // } else {
-  //   Serial.println("❌ HTTP Error: " + String(httpCode));
-  // }
-
-  // http.end();
-
-
-
-
-  if (client.connect(serverURL.c_str(), 80)) {
-  // 1. Send POST request headers
-  client.println(F("POST /alarm_device_status HTTP/1.1"));
-  client.print(F("Host: "));
-  client.println(serverURL);
-  client.println(F("Content-Type: application/json"));
-  client.print(F("Content-Length: "));
-  client.println(jsonData.length());
-  client.println();  // End of headers
-  client.println(jsonData);  // Request body
-
-  // 2. Wait for response
-  unsigned long timeout = millis();
-  while (client.available() == 0) {
-    if (millis() - timeout > 5000) {
-      Serial.println(F("❌ Timeout waiting for response"));
-      client.stop();
-      return;
-    }
-  }
-
-  // 3. Read response
-  Serial.println(F("✅ Server response:"));
-  while (client.available()) {
-    String line = client.readStringUntil('\n');
-    Serial.println(line);
-  }
-
-  client.stop();
-} else {
-  Serial.println(F("❌ Connection failed"));
-}
-}
+} 

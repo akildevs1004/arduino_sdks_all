@@ -19,7 +19,7 @@ IPAddress secondaryDNS(8, 8, 4, 4);
 
 // Simple credentials (replace with secure method for production)
 const char* USERNAME = "admin";
-const char* PASSWORD = "password";
+const char* PASSWORD = "welcome";
 
 
 String WIFI_SSID = "";

@@ -1,9 +1,9 @@
 {
   "wifi_ssid": "akil",
   "wifi_password": "Akil1234",
-  "wifi_ip": "192.168.3.200",
+  "wifi_ip": "192.168.3.20",
   "wifi_or_ethernet": "0",
-  "eth_ip": "192.168.2.210",
+  "eth_ip": "192.168.2.120",
   "eth_gateway": "192.168.2.1",
   "eth_subnet": "255.255.255.0",
   "device_serial_number": "XT123456",
@@ -23,8 +23,5 @@
   "water_checkbox": false,
   "fire_checkbox": false,
   "power_checkbox": false,
-  "siren_checkbox": false,
-  "max_temperature_sensor_count": 5,
-  "temperature_difference": 0.2
-
+  "siren_checkbox": false
 }

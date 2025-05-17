@@ -13,7 +13,6 @@
 // #include <Update.h>
 #include <ArduinoOTA.h>
 #include <ModbusMaster.h>
-// #include <WiFiClientSecure.h>
 
 #define DEBUG 0  // Set to 1 to enable debug
 WiFiManager wifiManager;
@@ -21,21 +20,21 @@ DynamicJsonDocument config(1024);  // Allocate 1024 bytes for JSON storage
 String sessionToken = "";
 
 bool loginStatus = false;
-// WiFiClientSecure clientSecure;
+
 WiFiClient client;  // Create a client object
 WebServer server(80);
-String deviceConfigContent="";
-String sensorData="";
-String DeviceIPNumber="";
-String loginErrorMessage="";
-String GlobalWebsiteResponseMessage="";
-String GlobalWebsiteErrorMessage="";
+String deviceConfigContent;
+String sensorData;
+String DeviceIPNumber;
+String loginErrorMessage;
+String GlobalWebsiteResponseMessage;
+String GlobalWebsiteErrorMessage;
 HTTPClient http;
 int cloudAccountActiveDaysRemaining = 100;
 unsigned long lastRun = 0;
 const unsigned long interval = 24UL * 60UL * 60UL * 1000UL;  // 24 hours in milliseconds
 String serverURL = "";
-String todayDate="";
+String todayDate;
 String device_serial_number = "XT123456";
 bool USE_ETHERNET = true;
 bool USE_DEFAULT_WIFIMANGER = false;
@@ -66,8 +65,6 @@ void setup() {
     DeviceSetup();
   }
   if (USE_DEFAULT_WIFIMANGER) {
-
-    WiFi.mode(WIFI_STA); // Ensure station mode
 
     connectDefaultWifiAuto();
 
@@ -112,7 +109,11 @@ void setup() {
 void loop() {
 
   Deviceloop();
+
+
+
   server.handleClient();
+
   if (WiFi.status() == WL_CONNECTED || USE_ETHERNET) {
 
      if(config["internet"]!="online")
@@ -157,5 +158,3 @@ String replaceHeaderContent(String html) {
 
   return html;
 }
-
-
