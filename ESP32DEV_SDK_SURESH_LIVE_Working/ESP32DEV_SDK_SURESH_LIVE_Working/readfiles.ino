@@ -8,25 +8,63 @@ String readConfig(String filename) {
 
   File file = LittleFS.open(path, "r");
   deviceConfigContent = file.readString();
-  // Serial.println("Config file found Success: ");
+  Serial.println("Config file found Success: ");
 
   file.close();
 
-  Serial.println(deviceConfigContent);
   deserializeJson(config, deviceConfigContent);
-  Serial.println(config["server_ip"].as<String>());
-
-
-
   //update Values from Device Config file to Program variables// for device.ino
 
-  // updateDeviceSensorVariablesFromConfigFile();
+ 
+  if (config.containsKey("max_temperature")) {
+    TEMPERATURE_THRESHOLD = config["max_temperature"].as<double>();
+  }
+  // if (config.containsKey("max_humidity")) {
+  //   HUMIDIY_THRESHOLD = config["max_humidity"].as<double>();
+  // }
+  if (config.containsKey("server_url")) {
+    serverURL = config["server_url"].as<String>();
+  }
+
+  // if (config.containsKey("temp_checkbox")) {
+  //   temp_checkbox = config["temp_checkbox"].as<bool>();
+  // }
+  // if (config.containsKey("humidity_checkbox")) {
+  //   humidity_checkbox = config["humidity_checkbox"].as<bool>();
+  // }
+  // if (config.containsKey("water_checkbox")) {
+  //   water_checkbox = config["water_checkbox"].as<bool>();
+  // }
+  // if (config.containsKey("fire_checkbox")) {
+  //   fire_checkbox = config["fire_checkbox"].as<bool>();
+  // }
+  // if (config.containsKey("power_checkbox")) {
+  //   power_checkbox = config["power_checkbox"].as<bool>();
+  // }
+  // if (config.containsKey("door_checkbox")) {
+  //   door_checkbox = config["door_checkbox"].as<bool>();
+  // }
+  // if (config.containsKey("siren_checkbox")) {
+  //   siren_checkbox = config["siren_checkbox"].as<bool>();
+  // }
+
+
+  // if (door_checkbox == true) {
+  //   doorCountdownDuration = config["max_doorcontact"].as<long>();
+  // }
+
+
+
+
+
+
+
+
+
+
+
 
   return deviceConfigContent;
-}
-
-void updateDeviceSensorVariablesFromConfigFile() {
-  
 }
 
 // Serve static files from LittleFS
@@ -34,7 +72,7 @@ String readFile(String path) {
   File file = LittleFS.open(path);
   if (!file) {
     Serial.println("Failed to open file for reading: " + path);
-    return "no content in file : " + path;
+    return "no content in file : "+path;
   }
   String content = file.readString();
   file.close();
@@ -56,7 +94,7 @@ String readFile(String path) {
 //   Serial.println("Data saved to " + filename);
 // }
 
-
+ 
 
 void saveConfig(String filename, String data) {
   // Open the config file for reading
@@ -74,7 +112,7 @@ void saveConfig(String filename, String data) {
   file.close();
 
   // Parse the existing JSON data from the file
-  DynamicJsonDocument doc(256);  // Adjust size based on the size of your JSON
+  DynamicJsonDocument doc(1024);  // Adjust size based on the size of your JSON
   DeserializationError error = deserializeJson(doc, fileContent);
 
   if (error) {
@@ -83,7 +121,7 @@ void saveConfig(String filename, String data) {
   }
 
   // Parse the incoming data (new JSON string)
-  DynamicJsonDocument newDoc(256);  // Adjust size based on incoming JSON
+  DynamicJsonDocument newDoc(1024);  // Adjust size based on incoming JSON
   error = deserializeJson(newDoc, data);
 
   if (error) {
@@ -116,11 +154,6 @@ void saveConfig(String filename, String data) {
 // Function to read, update, and write back JSON data using String for filenames
 void updateJsonConfig(String filename, String param, String value) {
 
-  if (config[param] == value)
-  {
-     return;
-  }
-
 
   // Open the file for reading
   File configFile = LittleFS.open("/config.json", "r");
@@ -130,7 +163,7 @@ void updateJsonConfig(String filename, String param, String value) {
   }
 
   // Allocate a buffer for the file content
-  StaticJsonDocument<126> jsonDoc;
+  StaticJsonDocument<512> jsonDoc;
 
   // Deserialize the JSON data
   DeserializationError error = deserializeJson(jsonDoc, configFile);
@@ -172,9 +205,6 @@ void updateJsonConfig(String filename, String param, String value) {
   configFile.close();
 
   //Serial.println("Configuration updated successfully.");
-
-  Serial.print(param);
-  Serial.print("---------------");
 
   Serial.println(param);
   readConfig("config.json");

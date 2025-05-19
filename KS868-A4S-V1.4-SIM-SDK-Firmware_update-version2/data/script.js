@@ -483,4 +483,4 @@ function updateConfigFileData() {
 }
 
 // Call fetchData every 5000 milliseconds (5 seconds)
-setInterval(fetchData, 1000 * 5);
+setInterval(fetchData, 1000 * 15);

@@ -18,7 +18,7 @@ void socketVerifyConnection() {
 
     // Attempt to reconnect with exponential backoff
     int retryDelay = 1000;     // Start with a 1-second delay
-    const int maxRetries = 1;  // Maximum number of retries
+    const int maxRetries = 5;  // Maximum number of retries
 
     for (int i = 0; i < maxRetries; i++) {
       if (socketConnectServer()) {
@@ -39,6 +39,7 @@ bool socketConnectServer() {
   Serial.println("Connecting to server...");
   // Convert String to char* (C-style string)
   char server_ip_updated[100];  // Create a char array of proper length
+  // config["server_ip"].toCharArray(server_ip_updated, 100);  // Copy the String to char*
 
   String ipString = config["server_ip"].as<String>();
 
@@ -50,6 +51,7 @@ bool socketConnectServer() {
     ipString.toCharArray(server_ip_updated, sizeof(server_ip_updated));
   }
 
+  // uint16_t server_port_updated = (uint16_t)config["server_port"].toInt();
 
   uint16_t server_port_updated = 80;  // Default port
 
@@ -93,22 +95,21 @@ void socketDeviceHeartBeatToServer() {
 
     socketConnectionStatus = "Connected";
 
-    DynamicJsonDocument heartbeatDoc(256);
+    //updateJsonConfig("config.json", "socketConnectionStatus", "Connected");
+
+
+
+    DynamicJsonDocument heartbeatDoc(1024);
     heartbeatDoc["serialNumber"] = config["device_serial_number"];
     heartbeatDoc["type"] = "heartbeat";
     heartbeatDoc["config"] = deviceConfigContent;  // ////////readConfig("config.json");
-    heartbeatDoc["sensor_data"] = sensorData;      // ////////readConfig("config.json");
+    heartbeatDoc["sensor_data"] = sensorData;  // ////////readConfig("config.json");    
 
     String heartbeatData;
     serializeJson(heartbeatDoc, heartbeatData);
 
     client.println(heartbeatData);
-    // Serial.println("-------------" + sensorData);
-    if (config["cloud"] != "online")
-      updateJsonConfig("config.json", "cloud", "online");
-    if (config["internet"] != true)
-      updateJsonConfig("config.json", "internet", "online");
-
+    Serial.println("Sent heartbeat:--------------------------------------------------- ");
 
 
   } else {
@@ -116,15 +117,12 @@ void socketDeviceHeartBeatToServer() {
     socketConnectionStatus = "Disconnected";
 
     updateJsonConfig("config.json", "socketConnectionStatus", "Disconnected");
-
-    if (config["cloud"] != "offline")
-      updateJsonConfig("config.json", "cloud", "offline");
   }
 }
 
 void processSocketServerRequests() {
-
-
+  
+  ///////////////////socketVerifyConnection();
   //Serial.println("Checking Request from server:--------------------------------------- ");
   if (client.connected() && client.available()) {
     String serverRequest = client.readStringUntil('\n');
@@ -138,6 +136,7 @@ void processSocketServerRequests() {
       updateConfigServerToDevice(serverRequest);
       //Serial.println("--------------------------RESTARTING DEVICE--------------------------------- ");
       socketDeviceHeartBeatToServer();
+      /////// handleRestartDevice();  // Restart device to effect the new cloud settings
     }
   } else {
     /////////Serial.println("No available data or client not connected.");
@@ -150,7 +149,7 @@ void updateConfigServerToDevice(String message) {
   Serial.println("Received message: " + message);
 
   // Parse the incoming JSON message
-  DynamicJsonDocument doc(256);
+  DynamicJsonDocument doc(1024);
   DeserializationError error = deserializeJson(doc, message);
 
   if (error) {
@@ -166,7 +165,7 @@ void updateConfigServerToDevice(String message) {
     if (action == "UPDATE_CONFIG") {
       // Update the config file
       JsonObject configCloudServer = doc["config"];
-
+    
 
       for (JsonPair kv : configCloudServer) {
         const char* key = kv.key().c_str();  // Get the key
@@ -178,36 +177,18 @@ void updateConfigServerToDevice(String message) {
         Serial.print(", Value: ");
         Serial.println(value.as<String>());
         updateJsonConfig("config.json", key, value);
-        if (String(key).startsWith("relay")) {
-          int relayNum = String(key).substring(5).toInt();  // extract number after "relay"
-          if (relayNum >= 0 && relayNum < 4) {
-            updateRelayStatusAction(relayNum, value);
-          }
-        }
       }
     }
   }
 
-
+  // safeRestart();
+  // loadConfig();  //update from config file
   readConfig("config.json");
   socketDeviceHeartBeatToServer();
-}
-void sendAlarmTriggerToSocketserver(String alarmData) {
-  
-       
-
-      if (client.connected()) {
-        client.println(alarmData);
-
-        Serial.println("Sent Config to SDK: " + alarmData);
-      } else {
-        lastTempAlarmTime=0;
-        Serial.println("Client not connected. Unable to send config.");
-      }
-    
+  handleRestartDevice();
 }
 void sendResponseToServerDeviceConfiguration(const String& jsonString) {
-  DynamicJsonDocument doc(256);
+  DynamicJsonDocument doc(1024);
 
   // Parse the JSON string
   DeserializationError error = deserializeJson(doc, jsonString);
@@ -232,11 +213,11 @@ void sendResponseToServerDeviceConfiguration(const String& jsonString) {
     Serial.println(request_action);
 
     if (request_serial_number == device_serial_number && request_action == "GET_CONFIG") {
-      DynamicJsonDocument configDoc(256);
+      DynamicJsonDocument configDoc(1024);
       configDoc["serialNumber"] = device_serial_number;
       configDoc["type"] = "config";
       configDoc["config"] = deviceConfigContent;  //readConfig("config.json");
-      configDoc["sensor_data"] = sensorData;      //
+    configDoc["sensor_data"] = sensorData;  //  
 
 
       String configData;
@@ -251,22 +232,22 @@ void sendResponseToServerDeviceConfiguration(const String& jsonString) {
     }
   }
 }
-int heartBeatSeconds = 10;
+
 void handleHeartbeat() {
 
-  // Serial.print("Heartbeat ");
-  // Serial.println(config["heartbeat"].as<int>());
+  Serial.print("Heartbeat ");
+  Serial.println(config["heartbeat"].as<int>());
 
-
+  int heartBeatSeconds = 10;
   if (config["heartbeat"].as<int>() > 10) {
     heartBeatSeconds = 10;
   }
   unsigned long currentMillis = millis();
-  if (currentMillis - previousHeartbeatMillis >= heartBeatSeconds * 1000) {
+  if (currentMillis - previousHeartbeatMillis >= 5 * 1000) {
     previousHeartbeatMillis = currentMillis;
     socketDeviceHeartBeatToServer();
   }
-
+  
 
   unsigned long currentMillisSocket = millis();
 
@@ -275,3 +256,4 @@ void handleHeartbeat() {
     processSocketServerRequests();
   }
 }
+ 

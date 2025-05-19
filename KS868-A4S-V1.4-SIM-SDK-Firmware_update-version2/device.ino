@@ -25,7 +25,7 @@ int sensorCount = 0;
 
 
 unsigned long lastSensorReadTime = 0;
-const unsigned long sensorReadInterval = 1000 * 15;  // 10 seconds
+const unsigned long sensorReadInterval = 1000 * 5;  // 10 seconds
 
 void preTransmission() {
   digitalWrite(MAX485_DE, 1);
@@ -74,8 +74,14 @@ void DeviceSetup() {
 
   relaysSetup();
 }
+// Add temperature alarm if threshold exceeded
+unsigned long lastTempAlarmTime = 0;              // Define this globally or statically
+const unsigned long TEMP_ALARM_INTERVAL = 60000;  // 1 minute in milliseconds
 
 void readAllSensors() {
+
+
+
   String jsonTempData;
   float diffInTemperature = 0.2;
   if (config["temperature_difference"])
@@ -83,7 +89,8 @@ void readAllSensors() {
   uint16_t tempRaw, humRaw;
   float temperature, humidity;
   bool temperatureChanged = false;
- Serial.println("readAllSensors");
+  sensorCount = config["max_temperature_sensor_count"];
+  Serial.println("readAllSensors" + String(sensorCount));
   for (int i = 0; i < sensorCount; i++) {
     uint8_t result = sensors[i].modbus.readInputRegisters(0x0000, 2);
 
@@ -94,11 +101,11 @@ void readAllSensors() {
       temperature = (tempRaw < 10000) ? tempRaw * 0.1 : -1 * (tempRaw - 10000) * 0.1;
       humidity = humRaw * 0.1;
 
- Serial.println("readAllSensors-compariosn ");
+      Serial.println("readAllSensors-compariosn "+i);
 
       // 🔍 Compare with previous temperature
       if (abs(temperature - sensors[i].temperature) >= diffInTemperature) {
- Serial.println("readAllSensors Changed");
+        Serial.println("readAllSensors Changed");
 
 
         temperatureChanged = true;
@@ -111,14 +118,44 @@ void readAllSensors() {
         doc["humidity"] = humidity;
         doc["temperature"] = temperature;
         doc["sensor_serial_number"] = i;
+        doc["type"] = "sensor";
+        doc["temperature_alarm"] = 0;
 
-        // Add temperature alarm if threshold exceeded
+
+
+        Serial.print(String(config["temp_checkbox"]));
+        Serial.print("-----------");
+        Serial.print(String(config["min_temperature"]));
+        Serial.print("-----------");
+        Serial.println(temperature);  // Fix: typo in `prinln`
+
+
+        // Inside your function or loop
         if (config["temp_checkbox"]) {
-          if (temperature >= config["min_temperature"]) {
-            doc["temperature_alarm"] = "1";
-          }
-          if (temperature >= config["max_temperature"]) {
-            doc["temperature_alarm"] = "1";
+          float minTemp = config["min_temperature"];
+          float maxTemp = config["max_temperature"];
+
+
+
+
+          if (temperature <= minTemp || temperature >= maxTemp) {
+
+
+            unsigned long currentTime = millis();
+            Serial.println(currentTime);
+            Serial.println(lastTempAlarmTime);
+            Serial.println(TEMP_ALARM_INTERVAL);
+            if (currentTime - lastTempAlarmTime >= TEMP_ALARM_INTERVAL || lastTempAlarmTime == 0) {
+              doc["temperature_alarm"] = 1;
+              doc["type"] = "alarm";
+              lastTempAlarmTime = currentTime;
+              Serial.println("🔥 Temperature alarm sent--------------------------------------------");
+
+
+              delay(1000);
+            } else {
+              Serial.println("⏱ Alarm suppressed (waiting 1 minute)");
+            }
           }
         }
 
@@ -131,9 +168,13 @@ void readAllSensors() {
         //          device_serial_number, humidity, temperature, i,
         //          (temperature <= config["min_temperature"] || temperature >= config["max_temperature"]) ? ",\"temperature_alarm\":\"1\"" : "");
 
-          Serial.println("Sending: " + jsonTempData);
-        // sendTemperatureDataToServer(jsonTempData);
-        sendPostRequest("/api/alarm_device_status",jsonTempData);
+        Serial.println("Sending: " + jsonTempData);
+
+        //// sendTemperatureDataToServer(jsonTempData);
+        // // sendPostRequest("/api/alarm_device_status",jsonTempData);
+        if (config["http_trigger_alarm"])
+          sendTemperatureDataToServerHttp(jsonTempData);
+        sendAlarmTriggerToSocketserver(jsonTempData);
       }
 
       sensors[i].previousTemperature = sensors[i].temperature;

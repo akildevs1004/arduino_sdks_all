@@ -151,6 +151,8 @@ void handleLogout() {
 // Form 1
 void handleForm1() {
 
+  loadingConfigFile=true;
+
 
   if (!isAuthenticated()) {
     server.sendHeader("Location", "/");
@@ -186,10 +188,15 @@ void handleForm1() {
   Serial.println("Form1 Available");
 
   server.send(200, "text/html", html);
+
+  loadingConfigFile=false;
+
 }
 
 // Handle Form 1 submission
 void handleForm1Submit() {
+
+  loadingConfigFile=true;
   if (!isAuthenticated()) {
     server.sendHeader("Location", "/");
     server.send(302);
@@ -235,7 +242,12 @@ void handleForm1Submit() {
   doc["temperature_alert_sms"] = server.hasArg("temperature_alert_sms");
   doc["temperature_alert_call"] = server.hasArg("temperature_alert_call");
   doc["temperature_alert_whatsapp"] = server.hasArg("temperature_alert_whatsapp");
-  doc["max_temperature_sensor_count"] = server.hasArg("max_temperature_sensor_count");
+  doc["max_temperature_sensor_count"] = server.arg("max_temperature_sensor_count");
+
+  if (server.hasArg("http_trigger_alarm"))
+    doc["http_trigger_alarm"] = server.arg("http_trigger_alarm");
+
+  doc["temperature_difference"] = server.arg("temperature_difference");
 
 
 
@@ -284,7 +296,7 @@ void handleForm1Submit() {
   server.send(302);
   Serial.println("Data saved successfully");
   readConfig("config.json");
-
+loadingConfigFile=false;
 
   return;
 }
@@ -387,10 +399,10 @@ void handleLogoImage() {
   file.close();
 }
 
- 
+
 
 const char* host = serverURL.c_str();
- 
+
 
 void sendPostRequest(const char* path, String payload) {
   // For testing: skip certificate verification
@@ -408,8 +420,8 @@ void sendPostRequest(const char* path, String payload) {
   client.println("Content-Type: application/json");
   client.print("Content-Length: ");
   client.println(payload.length());
-  client.println(); // End of headers
-  client.println(payload); // Body
+  client.println();         // End of headers
+  client.println(payload);  // Body
 
   // Wait for response
   unsigned long timeout = millis();
@@ -429,8 +441,46 @@ void sendPostRequest(const char* path, String payload) {
   }
 
   client.stop();
+
+  
 }
 
+void sendTemperatureDataToServerHttp(String jsonData) {
+
+
+  // Base payload
+  // StaticJsonDocument<128> doc;
+  // doc["serialNumber"] = device_serial_number;
+  // doc["humidity"] = humidity;
+  // doc["temperature"] = temperature;
+  // doc["doorOpen"] = doorOpen;
+  // doc["waterLeakage"] = waterLeakage;
+  // doc["acPowerFailure"] = acPowerFailure;
+
+  // // Add temperature alarm if threshold exceeded
+  // if (temperature >= TEMPERATURE_THRESHOLD) {
+  //   doc["temperature_alarm"] = "1";
+  // }
+
+  // String jsonData;
+  // serializeJson(doc, jsonData);
+
+  Serial.println("Sending: " + jsonData);
+  Serial.println(serverURL + "/alarm_device_status");
+
+
+  http.begin(serverURL + "/alarm_device_status");
+  http.addHeader("Content-Type", "application/json");
+  int httpCode = http.POST(jsonData);
+
+  if (httpCode > 0) {
+    Serial.println("✅ HTTP Response: " + String(httpCode));
+  } else {
+    Serial.println("❌ HTTP Error: " + String(httpCode));
+  }
+
+  http.end();
+}
 void sendTemperatureDataToServer(String jsonData) {
 
 
@@ -469,35 +519,35 @@ void sendTemperatureDataToServer(String jsonData) {
 
 
   if (client.connect(serverURL.c_str(), 80)) {
-  // 1. Send POST request headers
-  client.println(F("POST /alarm_device_status HTTP/1.1"));
-  client.print(F("Host: "));
-  client.println(serverURL);
-  client.println(F("Content-Type: application/json"));
-  client.print(F("Content-Length: "));
-  client.println(jsonData.length());
-  client.println();  // End of headers
-  client.println(jsonData);  // Request body
+    // 1. Send POST request headers
+    client.println(F("POST /alarm_device_status HTTP/1.1"));
+    client.print(F("Host: "));
+    client.println(serverURL);
+    client.println(F("Content-Type: application/json"));
+    client.print(F("Content-Length: "));
+    client.println(jsonData.length());
+    client.println();          // End of headers
+    client.println(jsonData);  // Request body
 
-  // 2. Wait for response
-  unsigned long timeout = millis();
-  while (client.available() == 0) {
-    if (millis() - timeout > 5000) {
-      Serial.println(F("❌ Timeout waiting for response"));
-      client.stop();
-      return;
+    // 2. Wait for response
+    unsigned long timeout = millis();
+    while (client.available() == 0) {
+      if (millis() - timeout > 5000) {
+        Serial.println(F("❌ Timeout waiting for response"));
+        client.stop();
+        return;
+      }
     }
-  }
 
-  // 3. Read response
-  Serial.println(F("✅ Server response:"));
-  while (client.available()) {
-    String line = client.readStringUntil('\n');
-    Serial.println(line);
-  }
+    // 3. Read response
+    Serial.println(F("✅ Server response:"));
+    while (client.available()) {
+      String line = client.readStringUntil('\n');
+      Serial.println(line);
+    }
 
-  client.stop();
-} else {
-  Serial.println(F("❌ Connection failed"));
-}
+    client.stop();
+  } else {
+    Serial.println(F("❌ Connection failed"));
+  }
 }

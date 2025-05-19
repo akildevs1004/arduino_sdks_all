@@ -54,6 +54,8 @@ void configureWifiEtherNetServer() {
   // Apply configuration
   if (USE_ETHERNET) {
 
+    /*
+
     local_IP.fromString(config["eth_ip"].as<String>());
     gateway.fromString(config["eth_gateway"].as<String>());
     subnet.fromString(config["eth_subnet"].as<String>());
@@ -103,7 +105,7 @@ void configureWifiEtherNetServer() {
     //   // // Get today's date
     //   todayDate = getCurrentDate();
     //   Serial.println("Today's Date: " + todayDate);
-    // }
+    // } */
   } else {
 
     connectWifiInernet();
@@ -187,20 +189,24 @@ void WiFiEvent(WiFiEvent_t event) {
 
 void connectDefaultWifiAuto() {
 
-  // bool res;
-  // res = wifiManager.autoConnect(device_serial_number.c_str());  // SSID and Password for AP
+  bool res;
+  res = wifiManager.autoConnect(device_serial_number.c_str());  // SSID and Password for AP
 
-  // if (!res) {
-  //   Serial.println("Failed to connect. Restarting...");
-  //   delay(3000);
-  //   ESP.restart();
-  // }
-  // DeviceIPNumber = WiFi.localIP().toString();
-  // // Connected successfully
-  //  Serial.println("Connected to WiFi!");
-  // Serial.println(WiFi.localIP());
+  if (!res) {
+    Serial.println("Failed to connect. Restarting...");
+    delay(3000);
+    ESP.restart();
+  }
+  DeviceIPNumber = WiFi.localIP().toString();
+  // Connected successfully
+  Serial.println("Connected to WiFi!");
+  Serial.println(WiFi.localIP());
 
-  // //handleRestartDevice();
+  updateJsonConfig("config.json", "wifi_ip", WiFi.localIP().toString());
+
+
+
+  //handleRestartDevice();
 }
 
 String getWiFiStatus() {
