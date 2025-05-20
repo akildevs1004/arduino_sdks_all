@@ -1,0 +1,379 @@
+<div class=container1>
+    <div style=text-align:center;font-weight:700><span style=width:70%;text-align:center><span
+                style=color:green>{GlobalWebsiteResponseMessage}</span> <span
+                style=color:red>{GlobalWebsiteErrorMessage}</span></span></div>
+    <div>
+        <div id=divAccountExpired style=color:red;display:none;font-weight:700;font-size:20px>Your Account is expired on
+            {cloud_account_expire}. Alarm Events are Not working.</div>
+        <div class=tab><button class=tablinks onclick='openTabContent(event,"tab1")' id=defaultOpen>Alarm
+                Settings</button> <button class=tablinks onclick='openTabContent(event,"tab2")'>Relay Settings</button>
+        </div>
+        <div class=tabcontent id=tab1>
+            <form action=/submit-form1 class=form1 click="return verifyform()" method=POST style=background-color:#ddd>
+                <table>
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Network Settings</div>
+                                <table>
+                                    <tr>
+                                        <td style=width:500px><label for=connectionType>Active Connection Type</label>
+                                        <td><select onchange="toggleConnectionFields()" id=wifi_or_ethernet
+                                                name=wifi_or_ethernet style=width:200px>
+                                                <option value=1>WiFi
+                                                <option value=0>Ethernet
+                                            </select>
+                                    <tr id=wifiFields>
+                                        <td><label for=wifiSsid>Wifi SSID Name:</label>
+                                        <td><input id=wifi_ssid name=wifi_ssid style=width:200px value={wifi_ssid}>
+                                    <tr id=wifiPasswordField>
+                                        <td><label for=wifiPass>Wifi Password:</label>
+                                        <td><input id=wifi_password name=wifi_password style=width:200px
+                                                value={wifi_password}>
+                                    <tr id=wifiIpField>
+                                        <td><label for=wifiIp>WiFi IP:</label>
+                                        <td><input id=wifi_ip name=wifi_ip style=width:200px readonly value={wifi_ip}>
+                                    <tr id=wifigateway>
+                                        <td><label for=ethGateway>Wifi Gateway:</label>
+                                        <td><input id=wifi_gateway name=wifi_gateway style=width:200px readonly
+                                                value={wifi_gateway}>
+                                    <tr id=wifiEthernet>
+                                        <td><label for=ethSubnet>Ethernet Subnet:</label>
+                                        <td><input id=wifi_subnet name=wifi_subnet style=width:200px readonly
+                                                value={wifi_subnet}>
+
+                                    <tr id=ethernetFields style=display:none1>
+                                        <td style=width:500px><label for=ethIp>Ethernet IP:</label>
+                                        <td><input id=eth_ip name=eth_ip style=width:200px value={eth_ip}>
+                                    <tr id=ethGatewayField style=display:none1>
+                                        <td><label for=ethGateway>Ethernet Gateway:</label>
+                                        <td><input id=eth_gateway name=eth_gateway style=width:200px
+                                                value={eth_gateway}>
+                                    <tr id=ethSubnetField style=display:none1>
+                                        <td><label for=ethSubnet>Ethernet Subnet:</label>
+                                        <td><input id=eth_subnet name=eth_subnet style=width:200px value={eth_subnet}>
+                                </table>
+                            </div>
+
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Device Info</div>
+                                <table>
+                                    <tr>
+                                        <td style=width:500px><label for=wifiIp>Device Serial Number:</label>
+                                        <td><input id=device_serial_number name=device_serial_number
+                                                style=width:200px;font-weight:700 value={device_serial_number} readonly>
+                                </table>
+                            </div>
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Server Settings</div>
+                                <table>
+                                    <tr>
+                                        <td style=width:500px><label for=serverURL>Server API URL:</label>
+                                        <td><input id=server_url name=server_url style=width:200px value={server_url}
+                                                required>
+                                    <tr>
+                                        <td><label for=serverURL1>Heartbeat Interval(Seconds):</label>
+                                        <td><select id=heartbeat name=heartbeat style=width:200px
+                                                value={heartbeat}></select>
+                                    <tr>
+                                        <td><label for=serverURL3>Socket IP address:</label>
+                                        <td><input id=server_ip name=server_ip style=width:200px value={server_ip}
+                                                required>
+                                    <tr>
+                                        <td><label for=serverURL3>Socket Port :</label>
+                                        <td><input id=server_port name=server_port style=width:200px value={server_port}
+                                                required>
+                                            <div id=socketConnectionStatus></div>
+                                </table>
+                            </div>
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Temperature Settings</div>
+                                <table>
+                                    <tr>
+                                        <td style=width:500px><label for=temp_checkbox>Temperature:</label>
+                                        <td><label for=temp_checkbox
+                                                style=cursor:pointer;display:inline-block;width:200px title=SMS><input
+                                                    id=temp_checkbox name=temp_checkbox style=width:30px value=1
+                                                    type=checkbox
+                                                    onclick='toggleInput("temp_checkbox","max_temperature"),toggleInput("temp_checkbox","min_temperature"),toggleTempAlerts()'>
+                                                Enable</label>
+
+                                            <select id=max_temperature_sensor_count name=max_temperature_sensor_count
+                                                style=width:200px value={max_temperature_sensor_count}></options>
+                                                </select>
+                                    <tr>
+                                        <td><label for=max_temperature>Max Temperature Threshold (numbers):</label>
+                                        <td><input id=max_temperature name=max_temperature style=width:200px type=number
+                                                disabled required step=0.1>
+                                    <tr>
+                                        <td><label for=min_temperature>Min Temperature Threshold (numbers):</label>
+                                        <td><input id=min_temperature name=min_temperature style=width:200px type=number
+                                                disabled required step=0.1>
+                                    <tr>
+                                        <td><label for=min_temperature>Notifications:</label>
+                                        <td><label for=temperature_alert_sms
+                                                style=cursor:pointer;display:inline-block;width:120px title=SMS><input
+                                                    id=temperature_alert_sms name=temperature_alert_sms style=width:30px
+                                                    value=sms type=checkbox disabled> SMS</label> <label
+                                                for=temperature_alert_call
+                                                style=cursor:pointer;display:inline-block;width:150px
+                                                title="Mobile Call"><input id=temperature_alert_call
+                                                    name=temperature_alert_call style=width:30px value=call
+                                                    type=checkbox disabled> Mobile Call</label> <label
+                                                for=temperature_alert_whatsapp
+                                                style=cursor:pointer;display:inline-block;width:150px
+                                                title=Whatsapp><input id=temperature_alert_whatsapp
+                                                    name=temperature_alert_whatsapp style=width:30px value=whatsapp
+                                                    type=checkbox disabled> Whatsapp</label>
+                                </table>
+                            </div>
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Humidity Settings</div>
+                                <table>
+                                    <tr>
+                                        <td style=width:500px><label for=humidity_checkbox>Humidity:</label>
+                                        <td><label for=humidity_checkbox
+                                                style=cursor:pointer;display:inline-block;width:200px title=SMS><input
+                                                    id=humidity_checkbox name=humidity_checkbox style=width:30px value=1
+                                                    type=checkbox
+                                                    onclick='toggleInput("humidity_checkbox","max_humidity"),togglehumidiyAlerts()'>
+                                                Enable</label>
+                                    <tr>
+                                        <td><label for=max_humidity>Humidity Threshold (numbers):</label>
+                                        <td><input id=max_humidity name=max_humidity style=width:200px type=number
+                                                disabled required step=0.1>
+                                    <tr>
+                                        <td><label for=min_temperature>Notifications:</label>
+                                        <td><label for=humidity_alert_sms
+                                                style=cursor:pointer;display:inline-block;width:120px title=SMS><input
+                                                    id=humidity_alert_sms name=humidity_alert_sms style=width:30px
+                                                    value=sms type=checkbox disabled> SMS</label> <label
+                                                for=humidity_alert_call
+                                                style=cursor:pointer;display:inline-block;width:150px
+                                                title="Mobile Call"><input id=humidity_alert_call
+                                                    name=humidity_alert_call style=width:30px value=call type=checkbox
+                                                    disabled> Mobile Call</label> <label for=humidity_alert_whatsapp
+                                                style=cursor:pointer;display:inline-block;width:150px
+                                                title=Whatsapp><input id=humidity_alert_whatsapp
+                                                    name=humidity_alert_whatsapp style=width:30px value=whatsapp
+                                                    type=checkbox disabled> Whatsapp</label>
+                                </table>
+                            </div>
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Water Settings</div>
+                                <table>
+                                    <tr>
+                                        <td style=width:500px><label>Water Leakage:</label>
+                                        <td><label for=water_checkbox
+                                                style=cursor:pointer;display:inline-block;width:200px title=SMS><input
+                                                    id=water_checkbox name=water_checkbox style=width:30px value=1
+                                                    type=checkbox onclick=toggleWaterAlerts()> Enable</label>
+                                    <tr>
+                                        <td><label for=min_temperature>Notifications:</label>
+                                        <td><label for=water_alert_sms
+                                                style=cursor:pointer;display:inline-block;width:120px title=SMS><input
+                                                    id=water_alert_sms name=water_alert_sms style=width:30px value=sms
+                                                    type=checkbox disabled> SMS</label> <label for=water_alert_call
+                                                style=cursor:pointer;display:inline-block;width:150px
+                                                title="Mobile Call"><input id=water_alert_call name=water_alert_call
+                                                    style=width:30px value=call type=checkbox disabled> Mobile
+                                                Call</label> <label for=water_alert_whatsapp
+                                                style=cursor:pointer;display:inline-block;width:150px
+                                                title=Whatsapp><input id=water_alert_whatsapp name=water_alert_whatsapp
+                                                    style=width:30px value=whatsapp type=checkbox disabled>
+                                                Whatsapp</label>
+                                </table>
+                            </div>
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Fire Settings</div>
+                                <table>
+                                    <tr>
+                                        <td style=width:500px><label>Fire:</label>
+                                        <td><label for=fire_checkbox
+                                                style=cursor:pointer;display:inline-block;width:200px title=SMS><input
+                                                    id=fire_checkbox name=fire_checkbox style=width:30px value=1
+                                                    type=checkbox onclick=toggleFireAlerts()> Enable</label>
+                                    <tr>
+                                        <td><label for=min_temperature>Notifications:</label>
+                                        <td><label for=fire_alert_sms
+                                                style=cursor:pointer;display:inline-block;width:120px title=SMS><input
+                                                    id=fire_alert_sms name=fire_alert_sms style=width:30px value=sms
+                                                    type=checkbox disabled> SMS</label> <label for=fire_alert_call
+                                                style=cursor:pointer;display:inline-block;width:150px
+                                                title="Mobile Call"><input id=fire_alert_call name=fire_alert_call
+                                                    style=width:30px value=call type=checkbox disabled> Mobile
+                                                Call</label> <label for=fire_alert_whatsapp
+                                                style=cursor:pointer;display:inline-block;width:150px
+                                                title=Whatsapp><input id=fire_alert_whatsapp name=fire_alert_whatsapp
+                                                    style=width:30px value=whatsapp type=checkbox disabled>
+                                                Whatsapp</label>
+                                </table>
+                            </div>
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Power Settings</div>
+                                <table>
+                                    <tr>
+                                        <td style=width:500px><label>Power:</label>
+                                        <td><label for=power_checkbox
+                                                style=cursor:pointer;display:inline-block;width:200px title=SMS><input
+                                                    id=power_checkbox name=power_checkbox style=width:30px value=1
+                                                    type=checkbox onclick=togglePowerAlerts()> Enable</label>
+                                    <tr>
+                                        <td><label>Notifications:</label>
+                                        <td><label for=power_alert_sms
+                                                style=cursor:pointer;display:inline-block;width:120px title=SMS><input
+                                                    id=power_alert_sms name=power_alert_sms style=width:30px value=sms
+                                                    type=checkbox disabled> SMS</label> <label for=power_alert_call
+                                                style=cursor:pointer;display:inline-block;width:150px
+                                                title="Mobile Call"><input id=power_alert_call name=power_alert_call
+                                                    style=width:30px value=call type=checkbox disabled> Mobile
+                                                Call</label> <label for=power_alert_whatsapp
+                                                style=cursor:pointer;display:inline-block;width:150px
+                                                title=Whatsapp><input id=power_alert_whatsapp name=power_alert_whatsapp
+                                                    style=width:30px value=whatsapp type=checkbox disabled>
+                                                Whatsapp</label>
+                                </table>
+                            </div>
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Door Settings</div>
+                                <table>
+                                    <tr>
+                                        <td style=width:500px><label>Door Contact:</label>
+                                        <td><label for=door_checkbox
+                                                style=cursor:pointer;display:inline-block;width:200px title=SMS><input
+                                                    id=door_checkbox name=door_checkbox style=width:30px value=1
+                                                    type=checkbox
+                                                    onclick='toggleInput("door_checkbox","max_doorcontact"),toggleDoorAlerts()'>
+                                                Enable</label>
+                                    <tr>
+                                        <td><label for=max_doorcontact>Door Contact Waiting(Seconds) :</label>
+                                        <td><select id=max_doorcontact name=max_doorcontact style=width:200px
+                                                value={max_doorcontact} disabled></select>
+                                    <tr>
+                                        <td><label>Notifications:</label>
+                                        <td><label for=door_alert_sms
+                                                style=cursor:pointer;display:inline-block;width:120px title=SMS><input
+                                                    id=door_alert_sms name=door_alert_sms style=width:30px value=sms
+                                                    type=checkbox disabled> SMS</label> <label for=door_alert_call
+                                                style=cursor:pointer;display:inline-block;width:150px
+                                                title="Mobile Call"><input id=door_alert_call name=door_alert_call
+                                                    style=width:30px value=call type=checkbox disabled> Mobile
+                                                Call</label> <label for=door_alert_whatsapp
+                                                style=cursor:pointer;display:inline-block;width:150px
+                                                title=Whatsapp><input id=door_alert_whatsapp name=door_alert_whatsapp
+                                                    style=width:30px value=whatsapp type=checkbox disabled>
+                                                Whatsapp</label>
+                                </table>
+                            </div>
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Siren Settings</div>
+                                <table>
+                                    <tr>
+                                        <td style=width:500px><label for=siren_checkbox>Siren Sound:</label>
+                                        <td><label for=siren_checkbox
+                                                style=cursor:pointer;display:inline-block;width:200px title=SMS><input
+                                                    id=siren_checkbox name=siren_checkbox style=width:30px value=1
+                                                    type=checkbox
+                                                    onclick='toggleInput("siren_checkbox","max_siren_play"),toggleInput("siren_checkbox","max_siren_pause")'>
+                                                Enable</label>
+                                    <tr>
+                                        <td><label for=max_siren_play>Siren Play(Seconds) :</label>
+                                        <td><select id=max_siren_play name=max_siren_play style=width:200px
+                                                value={max_siren_play} disabled></select>
+                                    <tr>
+                                        <td style=width:500px><label for=max_siren_pause>Siren Pause Time(Seconds)
+                                                :</label>
+                                        <td><select id=max_siren_pause name=max_siren_pause style=width:200px
+                                                value={max_siren_pause} disabled></select>
+                                    <tr>
+                                        <td>
+                                        <td><input value="Update Settings" type=submit>
+                                </table>
+                            </div>
+                </table>
+            </form>
+        </div>
+        <div class=tabcontent id=tab2>
+            <div style="width:100%; background-color:#ddd">
+                <table>
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Relay List</div>
+
+                                <div>
+                                    <div>
+
+                                        <table border="1" cellpadding="10" cellspacing="0">
+                                            <tr>
+                                                <th style="width:400px">Device</th>
+                                                <th>Control</th>
+                                            </tr>
+                                            <tr>
+                                                <td>FAN (Relay 1)</td>
+                                                <td>
+                                                    <button onclick="updateRelayStatus(0,'relaystatus0')">
+                                                        <div id="relaystatus0">OFF</div>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>AC (Relay 2)</td>
+                                                <td>
+                                                    <button onclick="updateRelayStatus(1,'relaystatus1')">
+                                                        <div id="relaystatus1">OFF</div>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Light (Relay 3)</td>
+                                                <td>
+                                                    <button onclick="updateRelayStatus(2,'relaystatus2')">
+                                                        <div id="relaystatus2">OFF</div>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Siren (Relay 4)</td>
+                                                <td>
+                                                    <button onclick="updateRelayStatus(3,'relaystatus3')">
+                                                        <div id="relaystatus3">OFF</div>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                    </div>
+                                </div>
+
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <script>function openTabContent(e, t) { var n, a, l; for (a = document.getElementsByClassName("tabcontent"), n = 0; n < a.length; n++)a[n].style.display = "none"; for (l = document.getElementsByClassName("tablinks"), n = 0; n < l.length; n++)l[n].className = l[n].className.replace(" active", ""); document.getElementById(t).style.display = "block", e.currentTarget.className += " active" } document.getElementById("defaultOpen").click()</script>
+    </div>
+</div>
+<script>
+    var ipAddress = "{ipAddress}";
+</script>
+<script src="/script.js"></script>

@@ -1,0 +1,267 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  line-height: 1.6;
+}
+form {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  /*max-width: 400px;*/ 
+}
+input[type="text"], input[type="password"] {
+  width: 100%;
+  /* padding: 8px; */
+  margin: 5px 0 15px 0;
+  box-sizing: border-box;
+}
+input[type="submit"] {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+
+
+
+
+
+
+ body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header {
+      background-color: #1c3b50;
+      color: white;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header img {
+      height: 40px;
+    }
+
+    .header .time {
+      font-size: 20px;
+    }
+
+    .container {
+      margin: 20px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin: 0 0 20px;
+    }
+
+    .filter {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .filter select,
+    .filter input[type="date"] {
+      padding: 5px;
+      font-size: 16px;
+    }
+
+    .filter .date-range {
+      display: flex;
+      align-items: center;
+    }
+
+    .filter .date-range input {
+      margin-left: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table,
+    th,
+    td {
+      /* border: 1px solid #ddd; */
+    }
+
+    th,
+    td {
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .pagination select {
+      padding: 5px;
+      font-size: 16px;
+    }
+
+/* -----------Upload Firmware css */
+ 
+    .progress-container {
+      width: 100%;
+      background-color: #f3f3f3;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 30px;
+      background-color: #4caf50;
+      color: white;
+      text-align: center;
+      line-height: 30px;
+      border-radius: 5px;
+      transition: width 0.3s;
+    }
+
+    .btn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+
+    #status {
+      margin-top: 15px;
+    }
+/* -----------Upload HTML css */
+    #progressBar {
+      width: 100%;
+        background-color: #f3f3f3; 
+    }
+
+    #progressBar div {
+      height: 30px;
+      width: 0;
+      background-color: #4caf50;
+      text-align: center;
+      line-height: 30px;
+      color: white;
+    }
+
+
+ 
+  input ,
+  select {
+    width: 200px;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    outline: none;
+    background-color: #f9f9f9;
+  }
+
+  input:not([type="checkbox"]):focus,
+  select:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+    background-color: #fff;
+  }
+
+  input[type="submit"] {
+    padding: 10px 20px;
+    border: none;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+  }
+
+  input[type="submit"]:hover {
+    background-color: #45a049;
+  }
+ 
+
+  .card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background: #fff;
+  }
+
+  .card-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #d32f2f;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-group label {
+    display: inline-block;
+    width: 200px;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 200px;
+  }
+
+   .form1 input[type="checkbox"]{
+    height: 20px;
+    padding: 10px;
+   }
+
+   input[type="text"]:disabled {
+    background-color: #cdcdcd; /* Change to your preferred color */
+    border: 1px solid #ccc;    /* Optional: Change the border color if you like */
+  }
+  
+  input[type="number"]:disabled {
+    background-color: #cdcdcd; /* Change to your preferred color */
+    border: 1px solid #ccc;    /* Optional: Change the border color if you like */
+  }

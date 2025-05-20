@@ -1,0 +1,34 @@
+{
+  "wifi_ssid": "akil",
+  "wifi_password": "Akil1234",
+  "wifi_ip": "192.168.3.200",
+  "wifi_or_ethernet": "0",
+  "eth_ip": "192.168.2.210",
+  "eth_gateway": "192.168.2.1",
+  "eth_subnet": "255.255.255.0",
+  "device_serial_number": "XT123456",
+  "server_url": "https://backend.xtremeguard.org/api",
+  "heartbeat": "10",
+  "server_ip": "165.22.222.17",
+  "server_port": "6002",
+  "min_temperature": "",
+  "max_temperature": "",
+  "max_humidity": "",
+  "max_doorcontact": "",
+  "max_siren_play": "",
+  "max_siren_pause": "",
+  "door_checkbox": false,
+  "humidity_checkbox": false,
+  "temp_checkbox": false,
+  "water_checkbox": false,
+  "fire_checkbox": false,
+  "power_checkbox": false,
+  "siren_checkbox": false,
+  "max_temperature_sensor_count": 5,
+  "http_trigger_alarm": true,
+ 
+
+
+  "temperature_difference": 0.2
+
+}
