@@ -6,10 +6,15 @@ unsigned long uploadedSize = 0;
 void updateFirmWaresetup() {
   Serial.println("");
   Serial.print("Connected to WiFi. IP address: ");
-   Serial.println(WiFi.localIP());
-
+  Serial.println(WiFi.localIP());
+  // if (!MDNS.begin("esp32")) {
+  //   Serial.println("Error setting up MDNS responder!");
+  //   while (1) {
+  //     delay(1000);
+  //   }
+  // }
   // Setup OTA
-  ArduinoOTA.begin();
+  // ArduinoOTA.begin();
 
   // Route for root / web page
   server.on("/updatefirmware", HTTP_GET, []() {
@@ -19,7 +24,7 @@ void updateFirmWaresetup() {
 
     html = header + html;
 
-       html=replaceHeaderContent(html);
+    html = replaceHeaderContent(html);
 
     server.send(200, "text/html", html);
   });

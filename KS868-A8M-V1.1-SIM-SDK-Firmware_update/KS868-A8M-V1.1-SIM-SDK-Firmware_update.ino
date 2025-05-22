@@ -1,5 +1,7 @@
 // #define ARDUHAL_LOG_LEVEL 0  // Disable WiFi/HTTP debug logs
 //Model ESP32-WROOM-DA Module
+// #include <ESPmDNS.h>
+
 #include <WiFi.h>
 #include <ETH.h>
 #include <WebServer.h>
@@ -14,6 +16,8 @@
 #include <ArduinoOTA.h>
 #include <ModbusMaster.h>
 // #include <WiFiClientSecure.h>
+
+
 
 #define DEBUG 0  // Set to 1 to enable debug
 // WiFiManager wifiManager;
@@ -115,7 +119,7 @@ void setup() {
 }
 
 void loop() {
-  if (!loadingConfigFile) //do not load while saving configuration file 
+ // if (!loadingConfigFile) //do not load while saving configuration file 
   {
 
     server.handleClient();

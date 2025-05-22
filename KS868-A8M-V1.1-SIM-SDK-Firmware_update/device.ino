@@ -27,7 +27,7 @@ int sensorCount = 0;
 
 
 unsigned long lastSensorReadTime = 0;
-const unsigned long sensorReadInterval = 1000 * 5;  // 10 seconds
+const unsigned long sensorReadInterval = 1000 * 15;  // 10 seconds
 
 void preTransmission() {
   digitalWrite(MAX485_DE, 1);
@@ -80,22 +80,24 @@ void DeviceSetup() {
 // Add temperature alarm if threshold exceeded
 unsigned long lastTempAlarmTime = 0;              // Define this globally or statically
 const unsigned long TEMP_ALARM_INTERVAL = 60000;  // 1 minute in milliseconds
-
+ float temperature, humidity;
 void readAllSensors() {
 
-  if (!loadingConfigFile) {
 
-    String jsonTempData;
-    float diffInTemperature = 0.2;
-    if (config.containsKey("temperature_difference")) {
-      diffInTemperature = config["temperature_difference"].as<float>();
-    }
-    uint16_t tempRaw, humRaw;
-    float temperature, humidity;
-    bool temperatureChanged = false;
-    sensorCount = config["max_temperature_sensor_count"];
-    Serial.println("readAllSensors" + String(sensorCount));
-    for (int i = 0; i < sensorCount; i++) {
+
+  String jsonTempData = "";
+  float diffInTemperature = 0.2;
+  if (config.containsKey("temperature_difference")) {
+    diffInTemperature = config["temperature_difference"].as<float>();
+  }
+  uint16_t tempRaw, humRaw;
+ 
+  bool temperatureChanged = false;
+  sensorCount = config["max_temperature_sensor_count"];
+  Serial.println("readAllSensors" + String(sensorCount) + " - " + String(loadingConfigFile));
+
+  for (int i = 0; i < sensorCount; i++) {
+    {
       uint8_t result = sensors[i].modbus.readInputRegisters(0x0000, 2);
 
       if (result == sensors[i].modbus.ku8MBSuccess) {
@@ -105,10 +107,10 @@ void readAllSensors() {
         temperature = (tempRaw < 10000) ? tempRaw * 0.1 : -1 * (tempRaw - 10000) * 0.1;
         humidity = humRaw * 0.1;
 
-        Serial.println("readAllSensors-Data " + String(i) + " " + String(temperature)+ " " + String(humidity));
+        Serial.println("readAllSensors-Data " + String(i) + " " + String(temperature) + " " + String(humidity));
 
 
-       // Serial.println("readAllSensors-compariosn " + String(i) + " " + String(diffInTemperature));
+        // Serial.println("readAllSensors-compariosn " + String(i) + " " + String(diffInTemperature));
 
         // 🔍 Compare with previous temperature
         if (abs(temperature - sensors[i].temperature) >= diffInTemperature && temperature != sensors[i].temperature) {
@@ -169,19 +171,13 @@ void readAllSensors() {
 
           serializeJson(doc, jsonTempData);
 
-          //         char jsonTempData[64];
-          // snprintf(jsonTempData, sizeof(jsonTempData),
-          //          "{\"serialNumber\":\"%s\",\"humidity\":%.1f,\"temperature\":%.1f,\"sensor_serial_number\":%d%s}",
-          //          device_serial_number, humidity, temperature, i,
-          //          (temperature <= config["min_temperature"] || temperature >= config["max_temperature"]) ? ",\"temperature_alarm\":\"1\"" : "");
 
           Serial.println("Sending: " + jsonTempData);
 
-          //// sendTemperatureDataToServer(jsonTempData);
-          // // sendPostRequest("/api/alarm_device_status",jsonTempData);
+
+          sendAlarmTriggerToSocketserver(jsonTempData);
           if (config["http_trigger_alarm"])
             sendTemperatureDataToServerHttp(jsonTempData);
-          sendAlarmTriggerToSocketserver(jsonTempData);
         }
 
         sensors[i].previousTemperature = sensors[i].temperature;
@@ -193,133 +189,18 @@ void readAllSensors() {
       } else {
         sensors[i].isOnline = false;
       }
-
-      
-
-
-    }  //for loop
+    }  //checking config file loading
 
 
-    if (temperatureChanged) {
-      sensorData = buildSensorJson();
-    }
-  }
-}
-/*
-void readAllSensors() {
-  uint16_t tempRaw, humRaw;
-  float temperature, humidity;
-  for (int i = 0; i < sensorCount; i++) {
-    uint8_t result = sensors[i].modbus.readInputRegisters(0x0000, 2);  // Adjust based on your sensor's register map
+  }  //for loop
 
-    if (result == sensors[i].modbus.ku8MBSuccess) {
 
-      tempRaw = sensors[i].modbus.getResponseBuffer(0);
-      humRaw = sensors[i].modbus.getResponseBuffer(1);
-
-      if (tempRaw < 10000)
-        temperature = tempRaw * 0.1;
-      else
-        temperature = -1 * (tempRaw - 10000) * 0.1;
-
-      humidity = humRaw * 0.1;
-
-      sensors[i].temperature = temperature;
-      sensors[i].humidity = humidity;
-      sensors[i].isOnline = true;
-
-      // Serial.printf("📡 Sensor ID %d - Temp: %.2f °C, Hum: %.2f %%\n",
-      //               sensors[i].id, sensors[i].temperature, sensors[i].humidity);
-    } else {
-      sensors[i].isOnline = false;
-      // Serial.printf("⚠️ Sensor ID %d - Read failed (code: %d)\n",
-      //               sensors[i].id, result);
-    }
+  if (temperatureChanged) {
     sensorData = buildSensorJson();
-    // Serial.print("📦 Sensor JSON:");
-    // Serial.println(sensorData);
-
-
-
-
-    delay(100);
   }
 }
-*/
-// String buildSensorJson() {
-//   StaticJsonDocument<768> doc;  // Adjust size as needed
 
-//   doc["serial"] = device_serial_number;
-
-//   JsonArray sensorArray = doc.createNestedArray("sensors");
-
-//   for (int i = 0; i < sensorCount; i++) {
-//     JsonObject sensorObj = sensorArray.createNestedObject();
-//     sensorObj["id"] = sensors[i].id;
-//     sensorObj["temperature"] = sensors[i].temperature;
-//     sensorObj["humidity"] = sensors[i].humidity;
-//     sensorObj["online"] = sensors[i].isOnline;
-//   }
-
-//   String output;
-//   serializeJson(doc, output);
-//   return output;
-// }
-// void readSensor(ModbusMaster& node, const char* name) {
-//   uint8_t result;
-//   uint16_t tempRaw, humRaw;
-//   float temperature, humidity;
-
-//   result = node.readHoldingRegisters(0x0000, 2);  // Temp @ 0x0000, Hum @ 0x0001
-
-//   if (result == node.ku8MBSuccess) {
-//     tempRaw = node.getResponseBuffer(0);
-//     humRaw = node.getResponseBuffer(1);
-
-//     if (tempRaw < 10000)
-//       temperature = tempRaw * 0.1;
-//     else
-//       temperature = -1 * (tempRaw - 10000) * 0.1;
-
-//     humidity = humRaw * 0.1;
-
-//     Serial.print(name);
-//     Serial.print(" - Temp: ");
-//     Serial.print(temperature);
-//     Serial.print(" °C, Hum: ");
-//     Serial.print(humidity);
-//     Serial.println(" %");
-
-//     //update to Sensor data
-
-//     StaticJsonDocument<512> doc;
-//     doc["serial"] = deviceSerial;
-
-//     JsonArray sensorsArray = doc.createNestedArray("sensors");
-
-//     for (int i = 0; i < 4; i++) {
-//       JsonObject s = sensorsArray.createNestedObject();
-//       s["id"] = sensors[i].name;
-//       s["name"] = sensors[i].name;
-
-//       s["temperature"] = sensors[i].temperature;
-//       s["humidity"] = sensors[i].humidity;
-//     }
-
-//     String output;
-//     serializeJson(doc, output);
-//     Serial.println("JSON Output:");
-//     Serial.println(output);  // You can send this via HTTP
-
-
-
-
-//   } else {
-//     Serial.print(name);
-//     Serial.print(" - Read Error: ");
-//     Serial.println(result, HEX);
-//   }
-// }
+ 
 // Build JSON output with all sensor values
 String buildSensorJson() {
   StaticJsonDocument<126> doc;
@@ -340,24 +221,17 @@ String buildSensorJson() {
 }
 void Deviceloop() {
   unsigned long currentMillis = millis();
-
+  digitalLoop();
+  relayLoop();
   if (currentMillis - lastSensorReadTime >= sensorReadInterval) {
     lastSensorReadTime = currentMillis;
 
     // Read all sensors
+    //if (!loadingConfigFile)
     readAllSensors();
-    // Print full JSON to Serial
-
-    // readSensor(sensor1, "address1", 1);
-    // delay(100);
-    // readSensor(sensor2, "address2", 2);
-    // delay(100);
-    // readSensor(sensor3, "address3", 3);
-    // delay(100);
   }
 
-  relayLoop();
-  digitalLoop();
+
 
   ///networkLoop();
 }

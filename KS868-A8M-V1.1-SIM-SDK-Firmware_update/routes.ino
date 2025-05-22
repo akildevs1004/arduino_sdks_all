@@ -151,7 +151,7 @@ void handleLogout() {
 // Form 1
 void handleForm1() {
 
-  loadingConfigFile=true;
+  loadingConfigFile = true;
 
 
   if (!isAuthenticated()) {
@@ -188,15 +188,14 @@ void handleForm1() {
   Serial.println("Form1 Available");
 
   server.send(200, "text/html", html);
- delay(1000);
-  loadingConfigFile=false;
-
+  delay(1000);
+  loadingConfigFile = false;
 }
 
 // Handle Form 1 submission
 void handleForm1Submit() {
 
-  loadingConfigFile=true;
+  loadingConfigFile = true;
   if (!isAuthenticated()) {
     server.sendHeader("Location", "/");
     server.send(302);
@@ -298,7 +297,7 @@ void handleForm1Submit() {
   readConfig("config.json");
 
   delay(1000);
-loadingConfigFile=false;
+  loadingConfigFile = false;
 
   return;
 }
@@ -443,12 +442,12 @@ void sendPostRequest(const char* path, String payload) {
   }
 
   client.stop();
-
-  
 }
 
 void sendTemperatureDataToServerHttp(String jsonData) {
 
+
+  int httpRetryCount = 0;
 
   // Base payload
   // StaticJsonDocument<128> doc;
@@ -468,20 +467,28 @@ void sendTemperatureDataToServerHttp(String jsonData) {
   // serializeJson(doc, jsonData);
 
   Serial.println("Sending: " + jsonData);
-  Serial.println(serverURL + "/alarm_device_status");
+  Serial.println(serverURL);
 
 
-  http.begin(serverURL + "/alarm_device_status");
+  http.begin(serverURL);
   http.addHeader("Content-Type", "application/json");
   int httpCode = http.POST(jsonData);
 
   if (httpCode > 0) {
     Serial.println("✅ HTTP Response: " + String(httpCode));
   } else {
+  
+    // if (httpRetryCount < 3) {
+    //   Serial.println("❌ HTTP Error: Trying again " + String(httpCode));
+    //   sendTemperatureDataToServerHttp(jsonData);
+    //   httpRetryCount++;
+    // }
     Serial.println("❌ HTTP Error: " + String(httpCode));
   }
 
   http.end();
+
+  //delay(1000);
 }
 void sendTemperatureDataToServer(String jsonData) {
 

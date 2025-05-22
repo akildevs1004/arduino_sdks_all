@@ -62,10 +62,14 @@ document.addEventListener("DOMContentLoaded", function () {
   selectElement = document.getElementById("max_doorcontact");
 
   options.forEach((opt) => {
+     if(opt.value>=60)
+     {
     const optionElement = document.createElement("option");
-    optionElement.value = opt.value;
+    optionElement.value = opt.value/60;
     optionElement.textContent = opt.label;
     selectElement.appendChild(optionElement);
+
+    }
   });
 
   selectElement = document.getElementById("max_siren_play");
@@ -80,10 +84,14 @@ document.addEventListener("DOMContentLoaded", function () {
   selectElement = document.getElementById("max_siren_pause");
 
   options.forEach((opt) => {
+    if(opt.value>=60)
+    {
     const optionElement = document.createElement("option");
-    optionElement.value = opt.value;
+    optionElement.value = opt.value/60;
     optionElement.textContent = opt.label;
     selectElement.appendChild(optionElement);
+
+    }
   });
   loadConfigFileData();
 });
@@ -183,7 +191,7 @@ function generateSensorCountOptions() {
   const options = [];
 
   // Generate options for seconds (5s to 55s)
-  for (let sec = 1; sec <= 100; sec += 1) {
+  for (let sec = 1; sec <= 9; sec += 1) {
     options.push({
       id: "max_temperature_sensor_count",
       value: sec,

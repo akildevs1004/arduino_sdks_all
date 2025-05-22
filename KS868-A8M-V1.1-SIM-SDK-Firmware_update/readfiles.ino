@@ -116,8 +116,12 @@ void saveConfig(String filename, String data) {
 // Function to read, update, and write back JSON data using String for filenames
 void updateJsonConfig(String filename, String param, String value) {
 
+  loadingConfigFile=true;
+
   if (config[param] == value)
   {
+  loadingConfigFile=false;
+
      return;
   }
 
@@ -126,6 +130,8 @@ void updateJsonConfig(String filename, String param, String value) {
   File configFile = LittleFS.open("/config.json", "r");
   if (!configFile) {
     Serial.println("Failed to open config file for reading");
+  loadingConfigFile=false;
+
     return;
   }
 
@@ -160,6 +166,8 @@ void updateJsonConfig(String filename, String param, String value) {
   configFile = LittleFS.open("/config.json", FILE_WRITE);
   if (!configFile) {
     Serial.println("Failed to open config file for writing");
+  loadingConfigFile=false;
+
     return;
   }
 
@@ -176,6 +184,9 @@ void updateJsonConfig(String filename, String param, String value) {
   Serial.print(param);
   Serial.print("---------------");
 
-  Serial.println(param);
+  Serial.println(value);
   readConfig("config.json");
+
+  loadingConfigFile=false;
+
 }
