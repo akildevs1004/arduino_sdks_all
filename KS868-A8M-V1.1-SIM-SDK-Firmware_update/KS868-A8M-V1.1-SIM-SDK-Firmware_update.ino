@@ -60,6 +60,8 @@ void setup() {
 
     delay(1000);
   } else {
+    ensureConfigExists();
+    delay(200);
     String savedData = readConfig("config.json");
     Serial.println(savedData);
     if (savedData != "") {
@@ -119,7 +121,7 @@ void setup() {
 }
 
 void loop() {
- // if (!loadingConfigFile) //do not load while saving configuration file 
+  // if (!loadingConfigFile) //do not load while saving configuration file
   {
 
     server.handleClient();
@@ -167,4 +169,71 @@ String replaceHeaderContent(String html) {
 
 
   return html;
+}
+
+
+
+void ensureConfigExists() {
+  const char* CONFIG_PATH = "/config.json";
+  const char* DEFAULT_CONFIG_PATH = "/default_config.json";
+  // If config.json does not exist, copy from default_config.json
+  if (!LittleFS.exists(CONFIG_PATH)) {
+    Serial.println("config.json not found, creating from default_config.json...");
+
+    File defaultFile = LittleFS.open(DEFAULT_CONFIG_PATH, "r");
+    if (!defaultFile) {
+      Serial.println("Failed to open default_config.json");
+      return;
+    }
+
+    String defaultData = defaultFile.readString();
+    defaultFile.close();
+
+    File configFile = LittleFS.open(CONFIG_PATH, "w");
+    if (!configFile) {
+      Serial.println("Failed to create config.json");
+      return;
+    }
+
+    configFile.print(defaultData);
+    configFile.close();
+
+
+
+    Serial.println("config.json created from default_config.json.");
+
+    delay(2000);  // Ensure write finishes
+    ESP.restart();
+  } else {
+    Serial.println("config.json already exists.");
+  }
+}
+void restoreDefaultConfig() {
+  if (!LittleFS.begin(true)) {
+    Serial.println("LittleFS Mount Failed");
+    return;
+  }
+
+  File defaultFile = LittleFS.open("/default_config.json", "r");
+  if (!defaultFile) {
+    Serial.println("Default config file not found");
+    return;
+  }
+
+  String defaultData = defaultFile.readString();
+  defaultFile.close();
+
+  File configFile = LittleFS.open("/config.json", "w");
+  if (!configFile) {
+    Serial.println("Failed to open config.json for writing");
+    return;
+  }
+
+  configFile.print(defaultData);
+  configFile.close();
+
+  Serial.println("Configuration restored to default.");
+
+  delay(2000);  // Ensure write finishes
+  ESP.restart();
 }

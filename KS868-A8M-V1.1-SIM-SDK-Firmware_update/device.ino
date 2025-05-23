@@ -27,7 +27,7 @@ int sensorCount = 0;
 
 
 unsigned long lastSensorReadTime = 0;
-const unsigned long sensorReadInterval = 1000 * 15;  // 10 seconds
+const unsigned long sensorReadInterval = 1000 * 30;  // 10 seconds
 
 void preTransmission() {
   digitalWrite(MAX485_DE, 1);
@@ -80,7 +80,7 @@ void DeviceSetup() {
 // Add temperature alarm if threshold exceeded
 unsigned long lastTempAlarmTime = 0;              // Define this globally or statically
 const unsigned long TEMP_ALARM_INTERVAL = 60000;  // 1 minute in milliseconds
- float temperature, humidity;
+float temperature, humidity;
 void readAllSensors() {
 
 
@@ -91,7 +91,7 @@ void readAllSensors() {
     diffInTemperature = config["temperature_difference"].as<float>();
   }
   uint16_t tempRaw, humRaw;
- 
+
   bool temperatureChanged = false;
   sensorCount = config["max_temperature_sensor_count"];
   Serial.println("readAllSensors" + String(sensorCount) + " - " + String(loadingConfigFile));
@@ -200,7 +200,7 @@ void readAllSensors() {
   }
 }
 
- 
+
 // Build JSON output with all sensor values
 String buildSensorJson() {
   StaticJsonDocument<126> doc;
@@ -223,7 +223,7 @@ void Deviceloop() {
   unsigned long currentMillis = millis();
   digitalLoop();
   relayLoop();
-  if (currentMillis - lastSensorReadTime >= sensorReadInterval) {
+  if (currentMillis - lastSensorReadTime >= 1000*config["temperature_read_interval"].as<int>()) {
     lastSensorReadTime = currentMillis;
 
     // Read all sensors

@@ -9,7 +9,7 @@
 
 PCF8574 pcf8574_DI(I2C_DI_ADDR, I2C_SDA, I2C_SCL);
 
-#define DI_COUNT 6
+#define DI_COUNT 7
 
 // ====== Digital Input States ======
 bool diStates[DI_COUNT] = { false };
@@ -29,10 +29,35 @@ bool isAAnylarmOn = false;
 #define I2C_SCL 4
 // SHT30 I2C Address
 #define SHT30_I2C_ADDR 0x40
-#define RELAY_AC 1
+
 #define RELAY_FAN 0
+#define RELAY_AC 1
 #define RELAY_LAMP 2
 #define RELAY_BUZZER 3
+#define RELAY_LED 4
+
+
+#define DI_FIRE 0
+#define DI_WATER 1
+#define DI_AC_POWER 2
+#define DI_DOOR 3
+#define DI_SMOKE 4
+#define DI_PAUSE_BUZZER 5
+#define DI_FACTORY_RESET 6
+
+bool factoryResetTriggered = false;
+unsigned long factoryResetStartTime = 0;
+// #define DI_PENDING 7
+
+//Relay Defination
+//#1 - AC
+//#2 - FAN
+//#3 - LAMP
+//#4 - SIREN
+//#5 - LED
+//#6 -
+//#7 -
+//#8 -
 
 bool buzzerPaused = false;
 
@@ -54,6 +79,14 @@ bool relayStates[RELAY_COUNT] = { false };
 //#6 - Pause Buzzer
 //#7 - Factory Reset
 //#8 -
+
+
+
+
+
+
+
+
 
 
 bool fire_alarm = false;
@@ -95,6 +128,28 @@ bool checkAnyAlarmOpen() {
 
   return isAAnylarmOn;
 }
+
+void updateLatestAlarmStatus() {
+  StaticJsonDocument<64> doc;
+  String jsonTempData = "";  // Clear each time
+
+  doc["serialNumber"] = device_serial_number;
+  doc["type"] = "alarm";
+  doc["temperature"] = temperature;
+  doc["humidity"] = humidity;
+  doc["fire_alarm"] = 0;      //fire_alarm ? 1 : 0;
+  doc["waterLeakage"] = 0;    // waterLeakage ? 1 : 0;
+  doc["acPowerFailure"] = 0;  // acPowerFailure ? 1 : 0;
+  doc["doorOpen"] = 0;        // doorOpen ? 1 : 0;
+  doc["smoke_alarm"] = 0;     //smoke_alarm ? 1 : 0;
+  serializeJson(doc, jsonTempData);
+
+  Serial.println("Sending: " + jsonTempData);
+  if (config["http_trigger_alarm"]) {
+    sendTemperatureDataToServerHttp(jsonTempData);
+  }
+  sendAlarmTriggerToSocketserver(jsonTempData);
+}
 void checkAllDI() {
 
   Serial.println("-------------DIGITAL INPUT LOOP-----------------");
@@ -124,19 +179,19 @@ void checkAllDI() {
 
       // Add field based on pin number
       // Update flags and JSON based on DI index
-      if (i == 0) {
+      if (i == DI_FIRE) {
         fire_alarm = currentState;
         doc["fire_alarm"] = fire_alarm ? 1 : 0;
-      } else if (i == 1) {
+      } else if (i == DI_WATER) {
         waterLeakage = currentState;
         doc["waterLeakage"] = waterLeakage ? 1 : 0;
-      } else if (i == 2) {
+      } else if (i == DI_AC_POWER) {
         acPowerFailure = currentState;
         doc["acPowerFailure"] = acPowerFailure ? 1 : 0;
-      } else if (i == 3) {
+      } else if (i == DI_DOOR) {
         doorOpen = currentState;
         doc["doorOpen"] = doorOpen ? 1 : 0;
-      } else if (i == 4) {
+      } else if (i == DI_SMOKE) {
         smoke_alarm = currentState;
         doc["smoke_alarm"] = smoke_alarm ? 1 : 0;
       }
@@ -146,12 +201,9 @@ void checkAllDI() {
       serializeJson(doc, jsonTempData);
 
 
-      if (i == 3 && currentState) {
+      if (i == DI_DOOR && currentState && config["door_checkbox"]) {
 
         doorOpenStartTime = millis();  // Mark the time when door opened
-
-
-
 
         callRelayBuzzerTurn(currentState);
         delay(250);
@@ -164,26 +216,13 @@ void checkAllDI() {
 
         cheKDoorKeepOpenStatus(currentState);
 
-        //-------------Waiting for Door open Time
-
-        // if (!buzzerTriggeredForDoor) {
-        //   cheKDoorKeepOpenStatus(currentState);
-        // }
-
-        // else
-        // if (buzzerTriggeredForDoor && !currentState)  //if Door is open and another alarm is closed- Still Do not turn off Alarm
-        // {
-
-        // } else {
-        //   cheKDoorKeepOpenStatus(currentState);
-        // }
-      } else if (i == 5 && currentState) {  //pause siren buzzer
+      } else if (i == DI_PAUSE_BUZZER && currentState) {  //pause siren buzzer
 
         pauseBuzzerFor5Min();
 
       } else {
 
-        if ((i == 0 && config["fire_checkbox"]) || (i == 1 && config["water_checkbox"]) || (i == 2 && config["power_checkbox"]) || (i == 3 && config["door_checkbox"]) || (i == 4 && config["smoke_checkbox"])) {
+        if ((i == DI_FIRE && config["fire_checkbox"]) || (i == DI_WATER && config["water_checkbox"]) || (i == DI_AC_POWER && config["power_checkbox"]) || (i == DI_DOOR && config["door_checkbox"]) || (i == DI_SMOKE && config["smoke_checkbox"])) {
           callRelayBuzzerTurn(currentState);
           Serial.println("Sending: " + jsonTempData);
           if (config["http_trigger_alarm"]) {
@@ -193,10 +232,36 @@ void checkAllDI() {
         }
       }
     }
+    Serial.println(String("DI: ") + String(i));
+    // if (i == DI_FACTORY_RESET && currentState) {
+    //   restoreDefaultConfig();
+    // }
 
-    if (i == 3 && currentState) {  //door
+    // Factory reset logic - hold for 3 to 5 seconds
+    if (i == DI_FACTORY_RESET) {
+
+      if (currentState) {
+
+        Serial.println(String("Reset Time ") + String(millis() - factoryResetStartTime));
+        if ( !factoryResetTriggered) {
+          factoryResetStartTime = millis();
+          factoryResetTriggered = true;
+        } else if (millis() - factoryResetStartTime >= 1000 * 5 && millis() - factoryResetStartTime <= 1000 * 20) {
+          restoreDefaultConfig();
+          factoryResetTriggered = false;
+        }
+      } else {
+        factoryResetTriggered = false;
+      }
+    }
+
+    if (i == DI_DOOR && currentState && config["door_checkbox"]) {  //door
 
       cheKDoorKeepOpenStatus(currentState);
+
+    } else if (i == DI_DOOR && !currentState && config["door_checkbox"])  //door closed
+    {
+      buzzerTriggeredForDoor = false;
     }
   }
 }
@@ -218,12 +283,12 @@ void cheKDoorKeepOpenStatus(bool currentState) {
   // Door sensor
   if (currentState) {  // Door is open
 
-    Serial.println(String(" Door has been open for over  ") + String(buzzerTriggeredForDoor) + "-" + String(doorOpenDurationTime) + "-" + String(millis() - doorOpenStartTime >= 1000 * 60 * doorOpenDurationTime));
+    Serial.println(String(" Door has been open for over buzzerTriggeredForDoor: ") + String(buzzerTriggeredForDoor) + "- Minuntes " + String(doorOpenDurationTime) + "- Checking Delay " + String(millis() - doorOpenStartTime >= 1000 * 60 * doorOpenDurationTime));
 
 
     // Door has been open for some time
     if ((millis() - doorOpenStartTime >= 1000 * 60 * doorOpenDurationTime) && !buzzerTriggeredForDoor) {  // 3 minutes
-      Serial.println(String("🚨 Door has been open for over  ") + String(doorOpenDurationTime) + String(" minutes! Triggering buzzer."));
+      //Serial.println(String("🚨 Door has been open for over  ") + String(doorOpenDurationTime) + String(" minutes! Triggering buzzer."));
       callRelayBuzzerTurn(true);
       buzzerTriggeredForDoor = true;
 
@@ -312,6 +377,8 @@ void relaysSetup() {
   if (config["max_siren_pause"]) {
     max_siren_pause = config["max_siren_pause"].as<int>();
   }
+
+  delay(1000);
 }
 
 void relayLoop() {
@@ -322,11 +389,13 @@ void relayLoop() {
 
   Serial.println(checkAnyAlarmOpen());
 
-  Serial.println(String("Buzzer   - ") + (checkAnyAlarmOpen() ? "Open" : "Closed") + String(millis() - buzzerPauseStartTime));
+  Serial.println(String("Buzzer   - Alarm ") + (checkAnyAlarmOpen() ? "Open" : "Closed") + String(millis() - buzzerPauseStartTime));
 
   if (buzzerPaused && millis() - buzzerPauseStartTime >= 1000 * 60 * max_siren_pause && checkAnyAlarmOpen()) {
     buzzerPaused = false;
     Serial.println("🔔 Buzzer pause expired — Buzzer re-enabled.");
+    buzzerTriggeredForDoor = false;
+    buzzerPauseStartTime = 0;
 
     callRelayBuzzerTurn(true);  // Make sure buzzer is OFF
 
@@ -377,14 +446,20 @@ void pauseBuzzerFor5Min() {
 
 void callRelayBuzzerTurn(bool buzzerShouldBeOn) {
 
-
-  // if (config["relay" + String(RELAY_BUZZER)] != buzzerShouldBeOn)
-  {
-    Serial.println(String("New Buzzer - ") + (buzzerShouldBeOn ? "Buzzer On" : "Buzzer Off"));
+  if (config["siren_checkbox"]) {
 
 
-    pcf8574_RE1.digitalWrite(RELAY_BUZZER, buzzerShouldBeOn ? LOW : HIGH);  // LOW = ON
+    // if (config["relay" + String(RELAY_BUZZER)] != buzzerShouldBeOn)
+    {
+      Serial.println(String("New Buzzer - ") + (buzzerShouldBeOn ? "Buzzer On" : "Buzzer Off"));
 
-    updateJsonConfig("config.json", "relay" + String(RELAY_BUZZER), buzzerShouldBeOn ? "true" : "false");
+
+      pcf8574_RE1.digitalWrite(RELAY_BUZZER, buzzerShouldBeOn ? LOW : HIGH);  // LOW = ON
+      pcf8574_RE1.digitalWrite(RELAY_LED, buzzerShouldBeOn ? LOW : HIGH);     // LOW = ON
+
+      updateJsonConfig("config.json", "relay" + String(RELAY_LED), buzzerShouldBeOn ? "true" : "false");
+
+      updateJsonConfig("config.json", "relay" + String(RELAY_BUZZER), buzzerShouldBeOn ? "true" : "false");
+    }
   }
 }

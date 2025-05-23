@@ -1,4 +1,4 @@
-
+int httpRetryCount = 0;
 void routes() {
   server.on("/", HTTP_GET, handleLoginPage);
   server.on("/login", HTTP_POST, handleLogin);
@@ -447,7 +447,7 @@ void sendPostRequest(const char* path, String payload) {
 void sendTemperatureDataToServerHttp(String jsonData) {
 
 
-  int httpRetryCount = 0;
+  
 
   // Base payload
   // StaticJsonDocument<128> doc;
@@ -475,19 +475,22 @@ void sendTemperatureDataToServerHttp(String jsonData) {
   int httpCode = http.POST(jsonData);
 
   if (httpCode > 0) {
+
+    httpRetryCount=0;
     Serial.println("✅ HTTP Response: " + String(httpCode));
   } else {
-  
-    // if (httpRetryCount < 3) {
-    //   Serial.println("❌ HTTP Error: Trying again " + String(httpCode));
-    //   sendTemperatureDataToServerHttp(jsonData);
-    //   httpRetryCount++;
-    // }
+
+    if (httpRetryCount < 2) {
+      Serial.println("❌ HTTP Error: Trying again " + String(httpCode));
+      httpRetryCount++;
+      sendTemperatureDataToServerHttp(jsonData);
+      
+    }
     Serial.println("❌ HTTP Error: " + String(httpCode));
   }
 
   http.end();
-
+  
   //delay(1000);
 }
 void sendTemperatureDataToServer(String jsonData) {
