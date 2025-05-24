@@ -232,7 +232,7 @@ void checkAllDI() {
         }
       }
     }
-    Serial.println(String("DI: ") + String(i));
+    // Serial.println(String("DI: ") + String(i));
     // if (i == DI_FACTORY_RESET && currentState) {
     //   restoreDefaultConfig();
     // }

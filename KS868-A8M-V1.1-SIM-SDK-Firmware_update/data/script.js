@@ -62,13 +62,11 @@ document.addEventListener("DOMContentLoaded", function () {
   selectElement = document.getElementById("max_doorcontact");
 
   options.forEach((opt) => {
-     if(opt.value>=60)
-     {
-    const optionElement = document.createElement("option");
-    optionElement.value = opt.value/60;
-    optionElement.textContent = opt.label;
-    selectElement.appendChild(optionElement);
-
+    if (opt.value >= 60) {
+      const optionElement = document.createElement("option");
+      optionElement.value = opt.value / 60;
+      optionElement.textContent = opt.label;
+      selectElement.appendChild(optionElement);
     }
   });
 
@@ -84,13 +82,11 @@ document.addEventListener("DOMContentLoaded", function () {
   selectElement = document.getElementById("max_siren_pause");
 
   options.forEach((opt) => {
-    if(opt.value>=60)
-    {
-    const optionElement = document.createElement("option");
-    optionElement.value = opt.value/60;
-    optionElement.textContent = opt.label;
-    selectElement.appendChild(optionElement);
-
+    if (opt.value >= 60) {
+      const optionElement = document.createElement("option");
+      optionElement.value = opt.value / 60;
+      optionElement.textContent = opt.label;
+      selectElement.appendChild(optionElement);
     }
   });
   loadConfigFileData();
@@ -361,29 +357,6 @@ function loadConfigFileData() {
     togglehumidiyAlerts();
 
     console.log(jsonData.cloud);
-
-    //update internet
-    // INTERNET STATUS
-    const internetEl = document.getElementById("internet");
-    internetEl.innerText = jsonData.internet == "online" ? "Online" : "Offline";
-    internetEl.style.color = jsonData.internet == "online" ? "green" : "red";
-
-    // CLOUD STATUS
-    const cloudEl = document.getElementById("cloud");
-    cloudEl.innerText = jsonData.cloud == "online" ? "Online" : "Offline";
-    cloudEl.style.color = jsonData.cloud == "online" ? "green" : "red";
-
-    if (jsonData.cloudAccountActiveDaysRemaining <= 0) {
-      alert("Your Account is Expired. Contact Service Provider.");
-
-      document.getElementById("divAccountExpired").style.display = "block";
-    } else if (jsonData.cloudAccountActiveDaysRemaining < 30) {
-      alert(
-        "Your Account will expire in " +
-          jsonData.cloudAccountActiveDaysRemaining +
-          " days and De-Activate Alarm Events automatically"
-      );
-    }
   } catch (error) {
     console.error("Error parsing JSON:", error);
   }

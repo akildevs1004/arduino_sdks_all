@@ -33,6 +33,8 @@
         var percent = (event.loaded / event.total) * 100;
         document.getElementById("progress").style.width = percent + "%";
         document.getElementById("progress").textContent = Math.round(percent) + "%";
+        document.getElementById('progress').style.backgroundColor = "#4caf50";
+
       }
     };
 

@@ -48,7 +48,7 @@ void routes() {
 
   server.on("/restart", HTTP_GET, handleRestartDevice);
 
-  // server.on("/updatefirmware", HTTP_GET, handleUpdateFirmware);
+    // server.on("/updatefirmware1", HTTP_GET, handleUpdateFirmware);
 
 
   // server.on("/updatefirmwaredatafiles", HTTP_GET, handleUpdatePage);
@@ -166,24 +166,26 @@ void handleForm1() {
   html.reserve(header.length() + form.length());
   html = header + form;
 
-  // Read saved data
-  String savedData = readConfig("config.json");
+  // // Read saved data
+  // String savedData = readConfig("config.json");
 
 
-  String field1Value = "";
+  // String field1Value = "";
 
-  if (savedData != "") {
-    DynamicJsonDocument doc(256);
-    deserializeJson(doc, savedData);
-    html.replace("{config_json}", savedData);
-
-
-    html = replaceHeaderContent(html);
+  // if (savedData != "") {
+  //   DynamicJsonDocument doc(256);
+  //   deserializeJson(doc, savedData);
+  //   html.replace("{config_json}", savedData);
 
 
-  } else {
-    Serial.println("Form1 Content is empty");
-  }
+  //   html = replaceHeaderContent(html);
+
+
+  // } else {
+  //   Serial.println("Form1 Content is empty");
+  // }
+
+  html = replaceHeaderContent(html);
 
   Serial.println("Form1 Available");
 

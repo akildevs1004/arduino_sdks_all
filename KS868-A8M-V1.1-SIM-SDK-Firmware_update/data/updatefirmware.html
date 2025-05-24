@@ -11,11 +11,8 @@
     <div id='progressBar' class='progress-bar'>0%</div>
   </div>
   <div id='status'></div>
-
   <a href='/restart'>Restart</a>
-
   <br />
-
   <div><a style=" text-decoration:none" href="/uploadhtmlfiles">Upload Html Files</a></div>
 
 </div>
@@ -31,13 +28,16 @@
         document.getElementById('progressBar').style.width = percent + '%';
         document.getElementById('progressBar').innerHTML = percent + '%';
         document.getElementById('status').innerHTML = 'Uploading: ' + percent + '%';
+        document.getElementById('progressBar').style.backgroundColor = "#4caf50";
       }
     };
     xhr.onload = function () {
       if (xhr.status == 200) {
         document.getElementById('status').innerHTML = 'Update complete! Device will reboot...';
-
-
+        // Reload the page after 10 seconds
+        setTimeout(function () {
+          location.reload();
+        }, 10000); // 10,000 ms = 10 seconds
       } else {
         document.getElementById('status').innerHTML = 'Error: ' + xhr.responseText;
       }

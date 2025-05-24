@@ -94,7 +94,7 @@ void readAllSensors() {
 
   bool temperatureChanged = false;
   sensorCount = config["max_temperature_sensor_count"];
-  Serial.println("readAllSensors" + String(sensorCount) + " - " + String(loadingConfigFile));
+  Serial.println("readAllSensors - " + String(sensorCount)  );
 
   for (int i = 0; i < sensorCount; i++) {
     {

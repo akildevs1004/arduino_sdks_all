@@ -43,7 +43,7 @@ String todayDate = "";
 String device_serial_number = "XT123456";
 bool USE_ETHERNET = true;
 bool USE_DEFAULT_WIFIMANGER = false;
-String firmWareVersion = "2.0";
+String firmWareVersion = "2.1";
 
 bool loadingConfigFile = false;
 
@@ -91,9 +91,11 @@ void setup() {
   routes();  // Define Routes and handlers
   server.begin();
   Serial.println("HTTP Server started");
+  Serial.print("------------------------------------------------");
+  Serial.println(WiFi.status());
 
 
-  if (WiFi.status() == WL_CONNECTED) {
+  if (WiFi.status() == WL_CONNECTED || USE_ETHERNET) {
 
     delay(1000);
     updateJsonConfig("config.json", "ipaddress", DeviceIPNumber);
@@ -107,12 +109,22 @@ void setup() {
     // todayDate = getCurrentDate();
     // Serial.println("Today's Date: " + todayDate);
 
-
+    Serial.println("-----------------------socketConnectServer--------------------------------------------");
     socketConnectServer();
+    Serial.println("-----------------------socketConnectServer--------------------------------------------");
+
     handleHeartbeat();
+    Serial.println("-----------------------handleHeartbeat--------------------------------------------");
+
     getDeviceAccountDetails();
+    Serial.println("-----------------------getDeviceAccountDetails--------------------------------------------");
+
     updateFirmWaresetup();
+    Serial.println("-----------------------updateFirmWaresetup--------------------------------------------");
+
     uploadHTMLsetup();
+    Serial.println("-----------------------uploadHTMLsetup--------------------------------------------");
+
     cloudAccountActiveDaysRemaining = 100;
     if (cloudAccountActiveDaysRemaining <= 0) {
       Serial.println("❌ XXXXXXXXXXXXXXXXXXXXXXXXXXXXX----Account is expired----XXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
@@ -156,6 +168,27 @@ void loop() {
 }
 
 String replaceHeaderContent(String html) {
+
+
+  // Read saved data
+  String savedData = readConfig("config.json");
+
+
+  String field1Value = "";
+
+  if (savedData != "") {
+    DynamicJsonDocument doc(256);
+    deserializeJson(doc, savedData);
+    html.replace("{config_json}", savedData);
+  }
+
+
+
+
+
+
+
+
   html.replace("{firmWareVersion}", firmWareVersion);
   html.replace("{ipAddress}", DeviceIPNumber);
   html.replace("{loginErrorMessage}", loginErrorMessage);

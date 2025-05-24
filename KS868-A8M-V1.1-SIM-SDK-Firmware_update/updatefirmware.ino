@@ -4,7 +4,7 @@ unsigned long totalSize = 0;
 unsigned long uploadedSize = 0;
 
 void updateFirmWaresetup() {
-  Serial.println("");
+  Serial.println("---------------------------------------------updateFirmWaresetup--------------------------");
   Serial.print("Connected to WiFi. IP address: ");
   Serial.println(WiFi.localIP());
   // if (!MDNS.begin("esp32")) {
