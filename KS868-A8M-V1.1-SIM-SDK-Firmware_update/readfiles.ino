@@ -26,7 +26,6 @@ String readConfig(String filename) {
 }
 
 void updateDeviceSensorVariablesFromConfigFile() {
-  
 }
 
 // Serve static files from LittleFS
@@ -116,13 +115,12 @@ void saveConfig(String filename, String data) {
 // Function to read, update, and write back JSON data using String for filenames
 void updateJsonConfig(String filename, String param, String value) {
 
-  loadingConfigFile=true;
+  loadingConfigFile = true;
 
-  if (config[param] == value)
-  {
-  loadingConfigFile=false;
+  if (config[param] == value) {
+    loadingConfigFile = false;
 
-     return;
+    return;
   }
 
 
@@ -130,7 +128,7 @@ void updateJsonConfig(String filename, String param, String value) {
   File configFile = LittleFS.open("/config.json", "r");
   if (!configFile) {
     Serial.println("Failed to open config file for reading");
-  loadingConfigFile=false;
+    loadingConfigFile = false;
 
     return;
   }
@@ -151,14 +149,20 @@ void updateJsonConfig(String filename, String param, String value) {
   // jsonDoc[param] = value;
 
 
-  if (value == "true") {
+if (param == "temperature_alerts_config") {
+    // Parse JSON string
+    DeserializationError error = deserializeJson(jsonDoc[param], value);
+    if (error) {
+      Serial.println("Failed to parse temperature_alerts_config JSON: " + String(error.c_str()));
+      jsonDoc[param] = JsonArray();  // assign empty array as fallback
+    }
+  } else if (value == "true") {
     jsonDoc[param] = true;
   } else if (value == "false") {
     jsonDoc[param] = false;
   } else {
-    jsonDoc[param] = value;  // Assign as is if it's neither "true" nor "false"
+    jsonDoc[param] = value; // assign string as-is
   }
-
 
 
 
@@ -166,7 +170,7 @@ void updateJsonConfig(String filename, String param, String value) {
   configFile = LittleFS.open("/config.json", FILE_WRITE);
   if (!configFile) {
     Serial.println("Failed to open config file for writing");
-  loadingConfigFile=false;
+    loadingConfigFile = false;
 
     return;
   }
@@ -187,6 +191,5 @@ void updateJsonConfig(String filename, String param, String value) {
   Serial.println(value);
   readConfig("config.json");
 
-  loadingConfigFile=false;
-
+  loadingConfigFile = false;
 }

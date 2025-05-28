@@ -5,8 +5,8 @@ unsigned long uploadedSize = 0;
 
 void updateFirmWaresetup() {
   Serial.println("---------------------------------------------updateFirmWaresetup--------------------------");
-  Serial.print("Connected to WiFi. IP address: ");
-  Serial.println(WiFi.localIP());
+ // Serial.print("Connected to WiFi. IP address: ");
+  //Serial.println(WiFi.localIP());
   // if (!MDNS.begin("esp32")) {
   //   Serial.println("Error setting up MDNS responder!");
   //   while (1) {

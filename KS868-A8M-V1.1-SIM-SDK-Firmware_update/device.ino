@@ -27,7 +27,7 @@ int sensorCount = 0;
 
 
 unsigned long lastSensorReadTime = 0;
-const unsigned long sensorReadInterval = 1000 * 30;  // 10 seconds
+const unsigned long sensorReadInterval = 1000 * 10;  // 10 seconds
 
 void preTransmission() {
   digitalWrite(MAX485_DE, 1);
@@ -79,7 +79,7 @@ void DeviceSetup() {
 }
 // Add temperature alarm if threshold exceeded
 unsigned long lastTempAlarmTime = 0;              // Define this globally or statically
-const unsigned long TEMP_ALARM_INTERVAL = 60000;  // 1 minute in milliseconds
+const unsigned long TEMP_ALARM_INTERVAL = 1000*1;  // 1 minute in milliseconds
 float temperature, humidity;
 void readAllSensors() {
 
@@ -94,7 +94,7 @@ void readAllSensors() {
 
   bool temperatureChanged = false;
   sensorCount = config["max_temperature_sensor_count"];
-  Serial.println("readAllSensors - " + String(sensorCount)  );
+  Serial.println("readAllSensors - " + String(sensorCount));
 
   for (int i = 0; i < sensorCount; i++) {
     {
@@ -107,10 +107,8 @@ void readAllSensors() {
         temperature = (tempRaw < 10000) ? tempRaw * 0.1 : -1 * (tempRaw - 10000) * 0.1;
         humidity = humRaw * 0.1;
 
-        Serial.println("readAllSensors-Data " + String(i) + " " + String(temperature) + " " + String(humidity));
+        Serial.println("readAllSensors-Data " + String(i + 1) + " " + String(temperature) + " " + String(humidity));
 
-
-        // Serial.println("readAllSensors-compariosn " + String(i) + " " + String(diffInTemperature));
 
         // 🔍 Compare with previous temperature
         if (abs(temperature - sensors[i].temperature) >= diffInTemperature && temperature != sensors[i].temperature) {
@@ -126,7 +124,7 @@ void readAllSensors() {
           doc["serialNumber"] = device_serial_number;
           doc["humidity"] = humidity;
           doc["temperature"] = temperature;
-          doc["sensor_serial_number"] = i;
+          doc["sensor_serial_address"] = i + 1;
           doc["type"] = "sensor";
           doc["temperature_alarm"] = 0;
 
@@ -139,34 +137,71 @@ void readAllSensors() {
           Serial.println(temperature);  // Fix: typo in `prinln`
 
 
-          // Inside your function or loop
-          if (config["temp_checkbox"]) {
-            float minTemp = config["min_temperature"];
-            float maxTemp = config["max_temperature"];
+          //get settings of Temperature sensor address 1 details
+          // DynamicJsonDocument doc(2048);
+          // deserializeJson(doc, json);
+          if (config["temperature_alerts_config"]) {
+            JsonObject result = findSensorById(config["temperature_alerts_config"], i + 1);
 
+            if (!result.isNull()) {
+              Serial.println("Sensor Address Settings found:");
+              serializeJsonPretty(result, Serial);
 
+              if (result["temperature"]["enabled"]) {
+                float minTemp = result["temperature"]["min"];
+                float maxTemp = result["temperature"]["max"];
 
+                Serial.print(i + 1);
 
-            if (temperature <= minTemp || temperature >= maxTemp) {
+                Serial.print(" - Min Temp: ");
+                Serial.println(minTemp);
+                Serial.print("Max Temp: ");
+                Serial.println(maxTemp);
 
-
-              unsigned long currentTime = millis();
-              Serial.println(currentTime);
-              Serial.println(lastTempAlarmTime);
-              Serial.println(TEMP_ALARM_INTERVAL);
-              if (currentTime - lastTempAlarmTime >= TEMP_ALARM_INTERVAL || lastTempAlarmTime == 0) {
-                doc["temperature_alarm"] = 1;
-                doc["type"] = "alarm";
-                lastTempAlarmTime = currentTime;
-                Serial.println("🔥 Temperature alarm sent--------------------------------------------");
-
-
-                delay(1000);
-              } else {
-                Serial.println("⏱ Alarm suppressed (waiting 1 minute)");
+                if (temperature <= minTemp || temperature >= maxTemp) {
+                  unsigned long currentTime = millis();
+                  if (currentTime - lastTempAlarmTime >= TEMP_ALARM_INTERVAL || lastTempAlarmTime == 0) {
+                    doc["temperature_alarm"] = 1;
+                    doc["type"] = "alarm";
+                    doc["temperature_max"] = maxTemp;
+                    doc["temperature_min"] = minTemp;
+                    lastTempAlarmTime = currentTime;
+                    Serial.println("🔥 Temperature alarm sent--------------------------------------------");
+                  } else {
+                    Serial.println("⏱ Alarm suppressed (waiting interval)");
+                  }
+                }
               }
+              if (result["humidity"]["enabled"]) {
+                float minTemp = result["humidity"]["min"];
+                float maxTemp = result["humidity"]["max"];
+
+                Serial.print("Min Temp: ");
+                Serial.println(minTemp);
+                Serial.print("Max Temp: ");
+                Serial.println(maxTemp);
+
+                if (humidity <= minTemp || humidity >= maxTemp) {
+                  unsigned long currentTime = millis();
+                  if (currentTime - lastTempAlarmTime >= TEMP_ALARM_INTERVAL || lastTempAlarmTime == 0) {
+                    doc["humidity_alarm"] = 1;
+                    doc["type"] = "alarm";
+                    doc["humidity_max"] = maxTemp;
+                    doc["humidity_min"] = minTemp;
+                    lastTempAlarmTime = currentTime;
+                    Serial.println("🔥 Humidity alarm sent--------------------------------------------");
+                  } else {
+                    Serial.println("⏱ Humidity suppressed (waiting interval)");
+                  }
+                }
+              }
+            } else {
+              Serial.println("Sensor not found.");
             }
+          } else {
+            Serial.println("temperature_alerts_config Not Found");
           }
+
 
 
           serializeJson(doc, jsonTempData);
@@ -188,10 +223,16 @@ void readAllSensors() {
 
       } else {
         sensors[i].isOnline = false;
+
+
+
+        Serial.println("❌ Sensor  readAllSensors-Data " + String(i + 1) + " OFFLINE ");
       }
+
+
     }  //checking config file loading
 
-
+    delay(1000);
   }  //for loop
 
 
@@ -200,7 +241,14 @@ void readAllSensors() {
   }
 }
 
-
+JsonObject findSensorById(JsonArray array, int targetId) {
+  for (JsonObject item : array) {
+    if (item["sensor_address_id"] == targetId) {
+      return item;
+    }
+  }
+  return JsonObject();  // Empty
+}
 // Build JSON output with all sensor values
 String buildSensorJson() {
   StaticJsonDocument<126> doc;
@@ -223,7 +271,7 @@ void Deviceloop() {
   unsigned long currentMillis = millis();
   digitalLoop();
   relayLoop();
-  if (currentMillis - lastSensorReadTime >= 1000*config["temperature_read_interval"].as<int>()) {
+  if (currentMillis - lastSensorReadTime >= 1000 * config["temperature_read_interval"].as<int>()) {
     lastSensorReadTime = currentMillis;
 
     // Read all sensors

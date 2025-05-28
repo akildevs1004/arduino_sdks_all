@@ -129,30 +129,31 @@ bool checkAnyAlarmOpen() {
   return isAAnylarmOn;
 }
 
-void updateLatestAlarmStatus() {
-  StaticJsonDocument<64> doc;
-  String jsonTempData = "";  // Clear each time
+// void updateLatestAlarmStatus() {
+//   StaticJsonDocument<64> doc;
+//   String jsonTempData = "";  // Clear each time
 
-  doc["serialNumber"] = device_serial_number;
-  doc["type"] = "alarm";
-  doc["temperature"] = temperature;
-  doc["humidity"] = humidity;
-  doc["fire_alarm"] = 0;      //fire_alarm ? 1 : 0;
-  doc["waterLeakage"] = 0;    // waterLeakage ? 1 : 0;
-  doc["acPowerFailure"] = 0;  // acPowerFailure ? 1 : 0;
-  doc["doorOpen"] = 0;        // doorOpen ? 1 : 0;
-  doc["smoke_alarm"] = 0;     //smoke_alarm ? 1 : 0;
-  serializeJson(doc, jsonTempData);
+//   doc["serialNumber"] = device_serial_number;
+//   doc["type"] = "alarm";
+//   doc["temperature"] = temperature;
+//   doc["sensor_serial_address"] = i;
+//   doc["humidity"] = humidity;
+//   doc["fire_alarm"] = 0;      //fire_alarm ? 1 : 0;
+//   doc["waterLeakage"] = 0;    // waterLeakage ? 1 : 0;
+//   doc["acPowerFailure"] = 0;  // acPowerFailure ? 1 : 0;
+//   doc["doorOpen"] = 0;        // doorOpen ? 1 : 0;
+//   doc["smoke_alarm"] = 0;     //smoke_alarm ? 1 : 0;
+//   serializeJson(doc, jsonTempData);
 
-  Serial.println("Sending: " + jsonTempData);
-  if (config["http_trigger_alarm"]) {
-    sendTemperatureDataToServerHttp(jsonTempData);
-  }
-  sendAlarmTriggerToSocketserver(jsonTempData);
-}
+//   Serial.println("Sending: " + jsonTempData);
+//   if (config["http_trigger_alarm"]) {
+//     sendTemperatureDataToServerHttp(jsonTempData);
+//   }
+//   sendAlarmTriggerToSocketserver(jsonTempData);
+// }
 void checkAllDI() {
 
-  Serial.println("-------------DIGITAL INPUT LOOP-----------------");
+  //Serial.println("-------------DIGITAL INPUT LOOP-----------------");
 
   for (int i = 0; i < DI_COUNT; i++) {
     bool currentState = (pcf8574_DI.digitalRead(i) == HIGH);  // Active HIGH
@@ -167,12 +168,11 @@ void checkAllDI() {
       String jsonTempData = "";  // Clear each time
 
       doc["serialNumber"] = device_serial_number;
-      doc["digital_serial_number"] = i;
+      doc["digital_input_number"] = i+1;
       doc["type"] = "alarm";
-
-      doc["temperature"] = temperature;
-
-      doc["humidity"] = humidity;
+      // doc["sensor_serial_address"] = i+1;
+      // doc["temperature"] = temperature;
+      // doc["humidity"] = humidity;
 
 
 
@@ -243,7 +243,7 @@ void checkAllDI() {
       if (currentState) {
 
         Serial.println(String("Reset Time ") + String(millis() - factoryResetStartTime));
-        if ( !factoryResetTriggered) {
+        if (!factoryResetTriggered) {
           factoryResetStartTime = millis();
           factoryResetTriggered = true;
         } else if (millis() - factoryResetStartTime >= 1000 * 5 && millis() - factoryResetStartTime <= 1000 * 20) {
@@ -297,9 +297,11 @@ void cheKDoorKeepOpenStatus(bool currentState) {
       String jsonTempData = "";  // Clear each time
 
       doc["serialNumber"] = device_serial_number;
-      doc["digital_serial_number"] = 3;
+      doc["digital_input_number"] = 3;
+
       doc["type"] = "alarm";
       doc["temperature"] = temperature;
+
       doc["humidity"] = humidity;
       doc["doorOpen"] = 1;
 
@@ -382,14 +384,14 @@ void relaysSetup() {
 }
 
 void relayLoop() {
-  Serial.print("max_siren_pause ");
+  // Serial.print("max_siren_pause ");
 
-  Serial.print(max_siren_pause);
-  Serial.print(" - isALarm ");
+  // Serial.print(max_siren_pause);
+  // Serial.print(" - isALarm ");
 
-  Serial.println(checkAnyAlarmOpen());
+  // Serial.println(checkAnyAlarmOpen());
 
-  Serial.println(String("Buzzer   - Alarm ") + (checkAnyAlarmOpen() ? "Open" : "Closed") + String(millis() - buzzerPauseStartTime));
+  // Serial.println(String("Buzzer   - Alarm ") + (checkAnyAlarmOpen() ? "Open" : "Closed") + String(millis() - buzzerPauseStartTime));
 
   if (buzzerPaused && millis() - buzzerPauseStartTime >= 1000 * 60 * max_siren_pause && checkAnyAlarmOpen()) {
     buzzerPaused = false;
@@ -403,7 +405,7 @@ void relayLoop() {
     String jsonTempData = "";  // Clear each time
 
     doc["serialNumber"] = device_serial_number;
-    doc["digital_serial_number"] = 5;
+    doc["digital_input_number"] = 5;
     doc["type"] = "alarm";
     doc["doorOpen"] = false;
 
@@ -430,7 +432,7 @@ void pauseBuzzerFor5Min() {
   String jsonTempData = "";  // Clear each time
 
   doc["serialNumber"] = device_serial_number;
-  doc["digital_serial_number"] = 5;
+  doc["digital_input_number"] = 5;
   doc["type"] = "alarm";
 
   doc["buzzer_paused"] = true;

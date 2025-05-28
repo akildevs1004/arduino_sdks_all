@@ -109,21 +109,12 @@ void setup() {
     // todayDate = getCurrentDate();
     // Serial.println("Today's Date: " + todayDate);
 
-    Serial.println("-----------------------socketConnectServer--------------------------------------------");
+
     socketConnectServer();
-    Serial.println("-----------------------socketConnectServer--------------------------------------------");
-
     handleHeartbeat();
-    Serial.println("-----------------------handleHeartbeat--------------------------------------------");
-
     getDeviceAccountDetails();
-    Serial.println("-----------------------getDeviceAccountDetails--------------------------------------------");
-
     updateFirmWaresetup();
-    Serial.println("-----------------------updateFirmWaresetup--------------------------------------------");
-
     uploadHTMLsetup();
-    Serial.println("-----------------------uploadHTMLsetup--------------------------------------------");
 
     cloudAccountActiveDaysRemaining = 100;
     if (cloudAccountActiveDaysRemaining <= 0) {
