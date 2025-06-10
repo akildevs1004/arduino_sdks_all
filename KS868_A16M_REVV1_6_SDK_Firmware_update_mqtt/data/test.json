@@ -1,0 +1,10 @@
+{
+  "wifi_ssid": "akil",
+  "wifi_password": "Akil1234",
+  "wifi_ip": "192.168.3.200",
+  "wifi_or_ethernet": "0",
+  "eth_ip": "192.168.2.210",
+  "eth_gateway": "192.168.2.1",
+  "eth_subnet": "255.255.255.0",
+  "eth_subnet1111": "XT123456"
+}

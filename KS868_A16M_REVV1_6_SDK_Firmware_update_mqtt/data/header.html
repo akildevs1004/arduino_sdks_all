@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<link rel="stylesheet" href="/styles.css">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Device Settings</title>
+
+</head>
+
+<body>
+  <div class="header">
+    <a href="/form1"><img src="http://{ipAddress}/logo" alt="Logo"></a>
+
+    <!-- <div>{ipAddress}</div> -->
+    <textarea style="display:none" id="config_json">{config_json}</textarea>
+
+    <div>Version:<span style="color:yellowgreen">{firmWareVersion}</span></div>
+    <div>Internet:<span style="color:rgb(0, 0, 0)" id="internet">Offline</span></div>
+    <div>Cloud:<span style="color:rgb(0, 0, 0)" id="cloud">Offline</span></div>
+    <div><a style="color:orangered;text-decoration:none" href="/updatefirmware">Update FirmWare</a></div>
+
+
+    <div class="time">
+      <div id="time">Loading time...</div>
+    </div>
+    <div><a style="color:red;text-decoration:none" href="/logout">Logout</a></div>
+  </div>
+
+  <div class=container1>
+    <div style=text-align:center;font-weight:700><span style=width:70%;text-align:center><span
+          style=color:green>{GlobalWebsiteResponseMessage}</span> <span
+          style=color:red>{GlobalWebsiteErrorMessage}</span></span></div>
+    <div>
+      <div id=divAccountExpired style=color:red;display:none;font-weight:700;font-size:20px>Your Account is expired on
+        {cloud_account_expire}. Alarm Events are Not working.</div>
+      <div class=tab>
+        <a class=tablinks href="/form1">Alarm
+          Settings</a>
+        <a class=tablinks href="/relays">Relays</a>
+
+        <a class=tablinks href="/communication">Communication</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    var ipAddress = "{ipAddress}";
+  </script>
+
+  <script src="header.js"></script>

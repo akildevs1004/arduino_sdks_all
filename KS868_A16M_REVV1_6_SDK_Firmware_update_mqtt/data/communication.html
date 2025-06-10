@@ -1,0 +1,181 @@
+<div class="container1">
+    <div style="text-align:center;font-weight:700">
+        <span style="width:70%;text-align:center">
+            <span style="color:green">{GlobalWebsiteResponseMessage}</span>
+            <span style="color:red">{GlobalWebsiteErrorMessage}</span>
+        </span>
+    </div>
+
+    <div class="tabcontent" id="tab2">
+        <div style="width:100%; background-color:#ddd">
+            <form action=/submit_communication class=form1 onsubmit="return verifyform()" method=POST
+                style=background-color:#ddd>
+
+                <table border="1" cellpadding="10" cellspacing="0">
+
+
+                    <!-- MQTT Row -->
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>MQTT
+                                    <span id="mqtt_communication">OFF</span>
+
+
+
+
+                                    <label for=mqtt_communication style=cursor:pointer;display:inline-block;width:200px
+                                        title=SMS><input id=mqtt_communication name=mqtt_communication style=width:30px
+                                            value=1 type=checkbox onclick="toggleMQTT()"> </label>
+
+
+
+
+
+                                </div>
+
+
+
+                                <div id="mqtt_settings" style="display:none; margin-top:10px;">
+
+                                    <table>
+                                        <tr>
+                                            <td><label>MQTT Server:</label>
+                                            <td><input id=mqtt_server name=mqtt_server style=width:200px>
+
+                                        <tr>
+                                            <td><label>MQTT Port:</label>
+                                            <td><input id=mqtt_port name=mqtt_port style=width:200px>
+
+                                        <tr>
+                                            <td><label>MQTT Clientid:</label>
+                                            <td><input id=mqtt_clientId name=mqtt_clientId style=width:200px>
+
+                                    </table>
+
+                                </div>
+                            </div>
+                        </td>
+
+                    </tr>
+
+                    <!-- Socket Row -->
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Socket
+                                    <span id="socket_communication">OFF</span>
+
+
+
+
+                                    <label for=socket_communication
+                                        style=cursor:pointer;display:inline-block;width:200px title=SMS><input
+                                            id=socket_communication name=socket_communication style=width:30px value=1
+                                            type=checkbox onclick="toggleSocket()"> </label>
+
+
+
+
+                                </div>
+
+                                <div id="socket_settings" style="display:none; margin-top:10px;">
+
+
+                                    <table>
+
+
+                                        <tr>
+                                            <td><label>Server IP Address:</label>
+                                            <td><input type="text" id="server_ip" name=server_ip style=width:200px
+                                                    placeholder="e.g. 192.168.1.100">
+
+                                        <tr>
+                                            <td><label>Socket Port:</label>
+                                            <td><input id=server_port name=server_port style=width:200px
+                                                    placeholder="e.g. 5000">
+
+                                    </table>
+
+
+
+                                </div>
+                            </div>
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>HTTP
+                                    <span id="http_communication">OFF</span>
+
+
+
+
+                                    <label for=http_communication style=cursor:pointer;display:inline-block;width:200px
+                                        title=SMS><input id=http_communication name=http_communication style=width:30px
+                                            value=1 type=checkbox onclick="toggleHTTP()"> </label>
+
+
+
+
+                                </div>
+
+                                <div id="http_settings" style="display:none; margin-top:10px;">
+
+
+
+                                    <table>
+
+
+                                        <tr>
+                                            <td><label>HTTP Link:</label>
+                                            <td><input type="text" id="server_url" name="server_url"
+                                                    placeholder="e.g. https://example.com/api" name=server_url
+                                                    style=width:200px placeholder="e.g. 192.168.1.100">
+                                    </table>
+                                </div>
+
+
+                            </div>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class=card>
+
+
+                                <div style="display:none1; margin-top:10px;">
+
+
+
+                                    <table>
+
+
+                                        <tr>
+                                            <td>
+                                            <td><input value="Update Settings" type=submit>
+                                    </table>
+                                </div>
+
+
+                            </div>
+                        </td>
+
+                    </tr>
+
+
+
+                </table>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script src="/scriptcommunication.js"></script>
