@@ -1,0 +1,109 @@
+<div class=tabcontent id=tab2>
+    <div style="width:100%; background-color:#ddd">
+        <table>
+            <tr>
+                <td>
+                    <div class=card>
+                        <div class=card-title>Relay List</div>
+
+                        <div>
+                            <div>
+
+                                <table border="1" cellpadding="10" cellspacing="0">
+                                    <tr>
+                                        <th style="width:400px">Device</th>
+                                        <th>Control</th>
+                                    </tr>
+                                    <tr>
+                                        <td>FAN (Relay 1)</td>
+                                        <td>
+                                            <button onclick="updateRelayStatus(0,'relaystatus0')">
+                                                <div id="relaystatus0">OFF</div>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>AC (Relay 2)</td>
+                                        <td>
+                                            <button onclick="updateRelayStatus(1,'relaystatus1')">
+                                                <div id="relaystatus1">OFF</div>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Light (Relay 3)</td>
+                                        <td>
+                                            <button onclick="updateRelayStatus(2,'relaystatus2')">
+                                                <div id="relaystatus2">OFF</div>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Siren (Relay 4)</td>
+                                        <td>
+                                            <button onclick="updateRelayStatus(3,'relaystatus3')">
+                                                <div id="relaystatus3">OFF</div>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Relay 5</td>
+                                        <td>
+                                            <button onclick="updateRelayStatus(4,'relaystatus4')">
+                                                <div id="relaystatus4">OFF</div>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Relay 6</td>
+                                        <td>
+                                            <button onclick="updateRelayStatus(5,'relaystatus5')">
+                                                <div id="relaystatus5">OFF</div>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Relay 7</td>
+                                        <td>
+                                            <button onclick="updateRelayStatus(6,'relaystatus6')">
+                                                <div id="relaystatus6">OFF</div>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Relay 8</td>
+                                        <td>
+                                            <button onclick="updateRelayStatus(7,'relaystatus7')">
+                                                <div id="relaystatus7">OFF</div>
+                                            </button>
+                                        </td>
+                                    </tr>
+
+                                </table>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<script>
+    function updateRelayStatus(relayid, divID) {
+        document.getElementById(divID).innerHTML =
+            document.getElementById(divID).innerHTML == "ON" ? "OFF" : "ON";
+        fetch("http://" + ipAddress + "/changerelay_status?num=" + relayid) // Replace with your API
+            .then((response) => response.json())
+            .then((data) => {
+                //   document.getElementById(divID).innerHTML =
+                //     document.getElementById(divID).innerHTML == "ON" ? "OFF" : "ON";
+            })
+            .catch((error) => {
+                console.error("Error fetching data:", error);
+            });
+    }
+
+</script>
