@@ -40,7 +40,7 @@ unsigned long lastRun = 0;
 const unsigned long interval = 24UL * 60UL * 60UL * 1000UL;  // 24 hours in milliseconds
 String serverURL = "";
 String todayDate = "";
-String device_serial_number = "XT123456";
+String device_serial_number = "XT400001";
 bool USE_ETHERNET = true;
 bool USE_DEFAULT_WIFIMANGER = false;
 String firmWareVersion = "2.1";
@@ -72,6 +72,10 @@ void setup() {
 
 
       serverURL = config["server_url"].as<String>();
+  
+
+      config["device_serial_number"] = device_serial_number;
+      updateJsonConfig("config.json", "device_serial_number", device_serial_number);
     }
 
 
@@ -212,15 +216,17 @@ void handleHeartbeat() {
     if (config["socket_communication"])
       socketDeviceHeartBeatToServer(heartbeatData);
 
-    if (config["mqtt_communication"])
+    if (config["mqtt_communication"] && config["device_serial_number"])
 
     {
       DynamicJsonDocument heartbeatDoc2(2048);
       heartbeatDoc2["serialNumber"] = config["device_serial_number"];
       heartbeatDoc2["type"] = "heartbeat";
+      heartbeatDoc2["testing"] = "yes";
+
       heartbeatDoc2["timestamp"] = millis();
       //heartbeatDoc2["config"] = readConfig("config.json");  //deviceConfigContent;  // ////////readConfig("config.json");
-                                                           //heartbeatDoc["sensor_data"] = sensorData;      // ////////readConfig("config.json");      
+      //heartbeatDoc["sensor_data"] = sensorData;      // ////////readConfig("config.json");
       serializeJson(heartbeatDoc2, heartbeatData);
       mqttHeartBeat(heartbeatData);
     }

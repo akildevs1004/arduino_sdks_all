@@ -49,21 +49,26 @@ void MqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.printf("Received [%s]: %s\n", topic, msg.c_str());
 
   if (msg == "GET_CONFIG") {
+    publishConfigToMQTT();
+  } else {
+    updateConfigThrougMqtt(msg);
+  }
+}
+
+void publishConfigToMQTT() 
+{
+  
 
 
-  mqttclient.setBufferSize(3000);
-
-    
+    mqttclient.setBufferSize(3000);
     DynamicJsonDocument mqttconfig(3000);  // Increased from 1024 for safety
-
-    
     mqttconfig["serialNumber"] = device_serial_number;
     mqttconfig["type"] = "config";
     mqttconfig["timestamp"] = millis();
     mqttconfig["config"] = deviceConfigContent;
 
 
-    
+
 
     // // 3. Handle the config file carefully
     // String configContent = readConfig("config.json");
@@ -110,9 +115,6 @@ void MqttCallback(char* topic, byte* payload, unsigned int length) {
       Serial.println("- Payload too large (" + String(payload.length()) + " bytes)");
       Serial.println("- Network issues");
     }
-  } else {
-    updateConfigThrougMqtt(msg);
-  }
 }
 void updateConfigThrougMqtt(String message) {
   Serial.println("Received message: " + message);
