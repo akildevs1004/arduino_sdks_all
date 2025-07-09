@@ -18,9 +18,9 @@ String clientId = "xtremevision";
 // const char* device_serial = "XT123456";
 
 // MQTT topics (based on serial)
-String MqttTopic_sub = clientId + "/" + device_serial_number + "/config/request";
-String MqttTopic_pub = clientId + "/" + device_serial_number + "/config";
-String MqttTopic_pubheartbeat = clientId + "/" + device_serial_number + "/heartbeat";
+String MqttTopic_sub = "";//clientId + "/" + device_serial_number + "/config/request";
+String MqttTopic_pub ="";//clientId + "/" + device_serial_number + "/config";
+String MqttTopic_pubheartbeat = "";//clientId + "/" + device_serial_number + "/heartbeat";
 ;
 // std::string topic_heartbeat_str = std::string("device/") + std::string(device_serial_number.c_str()) + "/heartbeat";
 
@@ -55,66 +55,65 @@ void MqttCallback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
-void publishConfigToMQTT() 
-{
-  
-
-
-    mqttclient.setBufferSize(3000);
-    DynamicJsonDocument mqttconfig(3000);  // Increased from 1024 for safety
-    mqttconfig["serialNumber"] = device_serial_number;
-    mqttconfig["type"] = "config";
-    mqttconfig["timestamp"] = millis();
-    mqttconfig["config"] = deviceConfigContent;
+void publishConfigToMQTT() {
 
 
 
+  mqttclient.setBufferSize(3000);
+  DynamicJsonDocument mqttconfig(3000);  // Increased from 1024 for safety
+  mqttconfig["serialNumber"] = device_serial_number;
+  mqttconfig["type"] = "config";
+  mqttconfig["timestamp"] = millis();
+  mqttconfig["config"] = deviceConfigContent;
 
-    // // 3. Handle the config file carefully
-    // String configContent = readConfig("config.json");
-    // if (configContent.length() > 0) {
-    //   // Option A: Add as raw string (if it's already JSON)
-    //   // mqttconfig["config"] = serialized(configContent);
 
-    //   // Option B: Parse and embed as nested JSON (better)
-    //   DynamicJsonDocument configDoc(1024);
-    //   DeserializationError error = deserializeJson(configDoc, configContent);
-    //   if (!error) {
-    //     mqttconfig["config"] = configDoc;
-    //   } else {
-    //     Serial.println("Failed to parse config.json: " + String(error.c_str()));
-    //     mqttconfig["config"] = "invalid";
-    //   }
-    // } else {
-    //   mqttconfig["config"] = "missing";
-    // }
 
-    // 4. Serialize and publish
-    String payload;
-    if (serializeJson(mqttconfig, payload) == 0) {
-      Serial.println("❌ Failed to serialize JSON");
-      return;
-    }
 
-    // 5. Publish with error checking
-    bool sent = mqttclient.publish(MqttTopic_pub.c_str(), payload.c_str());
+  // // 3. Handle the config file carefully
+  // String configContent = readConfig("config.json");
+  // if (configContent.length() > 0) {
+  //   // Option A: Add as raw string (if it's already JSON)
+  //   // mqttconfig["config"] = serialized(configContent);
 
-    mqttconfig.clear();
+  //   // Option B: Parse and embed as nested JSON (better)
+  //   DynamicJsonDocument configDoc(1024);
+  //   DeserializationError error = deserializeJson(configDoc, configContent);
+  //   if (!error) {
+  //     mqttconfig["config"] = configDoc;
+  //   } else {
+  //     Serial.println("Failed to parse config.json: " + String(error.c_str()));
+  //     mqttconfig["config"] = "invalid";
+  //   }
+  // } else {
+  //   mqttconfig["config"] = "missing";
+  // }
 
-    // 6. Debug output
-    if (sent) {
-      Serial.println("✅ MQTT publish success");
-      Serial.println("Payload size: " + String(payload.length()) + " bytes");
+  // 4. Serialize and publish
+  String payload;
+  if (serializeJson(mqttconfig, payload) == 0) {
+    Serial.println("❌ Failed to serialize JSON");
+    return;
+  }
+
+  // 5. Publish with error checking
+  bool sent = mqttclient.publish(MqttTopic_pub.c_str(), payload.c_str());
+
+  mqttconfig.clear();
+
+  // 6. Debug output
+  if (sent) {
+    Serial.println("✅ MQTT publish success");
+    Serial.println("Payload size: " + String(payload.length()) + " bytes");
 #ifdef DEBUG
-      serializeJsonPretty(mqttconfig, Serial);  // Pretty-print for debugging
+    serializeJsonPretty(mqttconfig, Serial);  // Pretty-print for debugging
 #endif
-    } else {
-      Serial.println("❌ MQTT publish failed");
-      Serial.println("Possible reasons:");
-      Serial.println("- MQTT not connected");
-      Serial.println("- Payload too large (" + String(payload.length()) + " bytes)");
-      Serial.println("- Network issues");
-    }
+  } else {
+    Serial.println("❌ MQTT publish failed");
+    Serial.println("Possible reasons:");
+    Serial.println("- MQTT not connected");
+    Serial.println("- Payload too large (" + String(payload.length()) + " bytes)");
+    Serial.println("- Network issues");
+  }
 }
 void updateConfigThrougMqtt(String message) {
   Serial.println("Received message: " + message);
@@ -192,6 +191,10 @@ void connectToMQTT() {
 void mqttsetup() {
   // mqtt_server =  config["mqtt_server"];//"broker.hivemq.com";
   // mqtt_port = config["mqtt_port"];//1883;
+
+  MqttTopic_sub = clientId + "/" + device_serial_number + "/config/request";
+  MqttTopic_pub = clientId + "/" + device_serial_number + "/config";
+  MqttTopic_pubheartbeat = clientId + "/" + device_serial_number + "/heartbeat";
 
   mqtt_server = config["mqtt_server"].as<const char*>();
   mqtt_port = config["mqtt_port"].as<int>();

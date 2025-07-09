@@ -1,6 +1,6 @@
 <div class="container">
   <span style="width:30%;text-align:left;float:left">
-    <h1> Update Firmware - Upload Bin File</h1>
+    <h1> Update Firmware - Upload Bin File </h1>
   </span>
   <br />
   <form id='uploadForm' method='POST' action='/updatefirmwareSubmit' enctype='multipart/form-data'>
@@ -13,7 +13,7 @@
   <div id='status'></div>
   <a href='/restart'>Restart</a>
   <br />
-  <div><a style=" text-decoration:none" href="/uploadhtmlfiles">Upload Html Files</a></div>
+  <div><a style=" text-decoration:none" href="/uploadhtmlfiles">Upload Html Files </a></div>
 
 </div>
 <script>
@@ -33,7 +33,7 @@
     };
     xhr.onload = function () {
       if (xhr.status == 200) {
-        document.getElementById('status').innerHTML = 'Update complete! Device will reboot...';
+        document.getElementById('status').innerHTML = 'Update completed! Device will reboot............';
         // Reload the page after 10 seconds
         setTimeout(function () {
           location.reload();

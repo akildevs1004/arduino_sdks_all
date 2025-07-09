@@ -40,10 +40,12 @@ unsigned long lastRun = 0;
 const unsigned long interval = 24UL * 60UL * 60UL * 1000UL;  // 24 hours in milliseconds
 String serverURL = "";
 String todayDate = "";
-String device_serial_number = "XT400001";
+String default_device_serial_number = "XT400002";
+String  device_serial_number = "";
+
 bool USE_ETHERNET = true;
 bool USE_DEFAULT_WIFIMANGER = false;
-String firmWareVersion = "2.1";
+String firmWareVersion = "1.0";
 
 bool loadingConfigFile = false;
 
@@ -72,11 +74,30 @@ void setup() {
 
 
       serverURL = config["server_url"].as<String>();
-  
 
-      config["device_serial_number"] = device_serial_number;
-      updateJsonConfig("config.json", "device_serial_number", device_serial_number);
+
+
+      // //config["device_serial_number"] = device_serial_number;
+      // if (!config["device_serial_number"])
+      //   updateJsonConfig("config.json", "device_serial_number", device_serial_number);
     }
+
+
+    Serial.print("Device Serial Number:" + device_serial_number + "-");
+    Serial.println(String(config["device_serial_number"]));
+
+
+
+    if (!config["device_serial_number"]) {
+      updateJsonConfig("config.json", "device_serial_number", default_device_serial_number);
+      delay(2000);  // Ensure write finishes
+      ESP.restart();
+
+       
+    }
+
+    //load serial number from config file only
+    device_serial_number = config["device_serial_number"].as<String>();
 
 
     DeviceSetup();

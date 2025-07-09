@@ -12,7 +12,7 @@ PCF8574 pcf8574_DI(I2C_DI_ADDR);  //, I2C_SDA, I2C_SCL);
 
 
 
-#define DI_COUNT 3
+#define DI_COUNT 7
 
 // ====== Digital Input States ======
 bool diStates[DI_COUNT] = { false };
