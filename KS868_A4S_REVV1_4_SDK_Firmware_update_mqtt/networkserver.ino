@@ -188,9 +188,7 @@ void onEthEvent(WiFiEvent_t event) {
   switch (event) {
     case ARDUINO_EVENT_ETH_CONNECTED:
       Serial.println("✅ Ethernet Connected");
-      delay(5000);
-
-       mqttsetup();
+       
       
       break;
 
@@ -227,7 +225,8 @@ void onWiFiEvent(WiFiEvent_t event) {
     case ARDUINO_EVENT_WIFI_STA_GOT_IP:
       Serial.print("📶 Wi-Fi IP: ");
       Serial.println(WiFi.localIP());
-      connectToMQTT();
+     delay(5000);
+      mqttsetup();
       isNetworkConnected = true;
       break;
 
