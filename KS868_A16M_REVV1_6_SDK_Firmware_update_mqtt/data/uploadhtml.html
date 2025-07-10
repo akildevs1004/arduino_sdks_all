@@ -15,7 +15,7 @@
   <div class='progress-container'>
     <div id='progressBar' class='progress-bar'>0%</div>
   </div>
-
+  <div id='status'></div>
   <a href='/restart'>Restart</a>
 </div>
 <script>
@@ -31,22 +31,34 @@
     xhr.upload.onprogress = function (event) {
       if (event.lengthComputable) {
         var percent = (event.loaded / event.total) * 100;
-        document.getElementById("progress").style.width = percent + "%";
-        document.getElementById("progress").textContent = Math.round(percent) + "%";
-        document.getElementById('progress').style.backgroundColor = "#4caf50";
+        document.getElementById("progressBar").style.width = percent + "%";
+        document.getElementById("progressBar").textContent = Math.round(percent) + "%";
+        document.getElementById('progressBar').style.backgroundColor = "#4caf50";
+        document.getElementById('status').innerHTML = 'Uploading: ' + percent + '%';
 
       }
     };
-
     xhr.onload = function () {
       if (xhr.status == 200) {
-        alert("File uploaded successfully!");
+        document.getElementById('status').innerHTML = 'Update completed! Device will reboot.................';
+        // Reload the page after 10 seconds
+        setTimeout(function () {
+          location.reload();
+        }, 1000 * 5); // 10,000 ms = 10 seconds
       } else {
-        alert("File upload failed!");
+        document.getElementById('status').innerHTML = 'Error: ' + xhr.responseText;
       }
     };
-
     xhr.send(formData);
+    // xhr.onload = function () {
+    //   if (xhr.status == 200) {
+    //     alert("File uploaded successfully!");
+    //   } else {
+    //     alert("File upload failed!");
+    //   }
+    // };
+
+    // xhr.send(formData);
   };
 </script>
 </body>

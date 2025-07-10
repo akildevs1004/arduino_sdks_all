@@ -41,7 +41,7 @@ const unsigned long interval = 24UL * 60UL * 60UL * 1000UL;  // 24 hours in mill
 String serverURL = "";
 String todayDate = "";
 String default_device_serial_number = "XT400002";
-String  device_serial_number = "";
+String device_serial_number = "";
 
 bool USE_ETHERNET = true;
 bool USE_DEFAULT_WIFIMANGER = false;
@@ -92,8 +92,6 @@ void setup() {
       updateJsonConfig("config.json", "device_serial_number", default_device_serial_number);
       delay(2000);  // Ensure write finishes
       ESP.restart();
-
-       
     }
 
     //load serial number from config file only

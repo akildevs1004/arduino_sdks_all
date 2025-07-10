@@ -195,7 +195,7 @@ void checkAllDI() {
         doc["fire_alarm"] = fire_alarm ? 1 : 0;
       } else if (i == DI_WATER) {
         waterLeakage = currentState;
-        doc["waterLeakage"] = waterLeakage ? 1 : 0;
+        doc["waterLeakage"] = waterLeakage ? 0 : 1;
       } else if (i == DI_AC_POWER) {
         acPowerFailure = currentState;
         doc["acPowerFailure"] = acPowerFailure ? 1 : 0;
@@ -231,14 +231,18 @@ void checkAllDI() {
 
         pauseBuzzerFor5Min();
 
-      } else {
+      } else
 
-        if ((i == DI_FIRE && config["fire_checkbox"]) || (i == DI_WATER && config["water_checkbox"]) || (i == DI_AC_POWER && config["power_checkbox"]) || (i == DI_DOOR && config["door_checkbox"]) || (i == DI_SMOKE && config["smoke_checkbox"])) {
-          callRelayBuzzerTurn(currentState);
-          //Serial.println("Sending: " + jsonTempData);
+        if ((i == DI_FIRE && config["fire_checkbox"]) || (i == DI_AC_POWER && config["power_checkbox"]) || (i == DI_DOOR && config["door_checkbox"]) || (i == DI_SMOKE && config["smoke_checkbox"])) {
+        callRelayBuzzerTurn(currentState);
+        //Serial.println("Sending: " + jsonTempData);
 
-          sendTemperatureDataToServerHttp(jsonTempData);
-        }
+        sendTemperatureDataToServerHttp(jsonTempData);
+      } else if ((i == DI_WATER && config["water_checkbox"])) {
+        callRelayBuzzerTurn(!currentState);
+        //Serial.println("Sending: " + jsonTempData);
+
+        sendTemperatureDataToServerHttp(jsonTempData);
       }
     }
     // Serial.println(String("DI: ") + String(i));

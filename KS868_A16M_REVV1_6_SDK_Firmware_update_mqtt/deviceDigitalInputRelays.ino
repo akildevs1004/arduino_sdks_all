@@ -190,7 +190,7 @@ void checkAllDI() {
         doc["fire_alarm"] = fire_alarm ? 1 : 0;
       } else if (i == DI_WATER) {
         waterLeakage = currentState;
-        doc["waterLeakage"] = waterLeakage ? 1 : 0;
+        doc["waterLeakage"] = waterLeakage ? 0 : 1;
       } else if (i == DI_AC_POWER) {
         acPowerFailure = currentState;
         doc["acPowerFailure"] = acPowerFailure ? 1 : 0;
@@ -226,14 +226,18 @@ void checkAllDI() {
 
         pauseBuzzerFor5Min();
 
-      } else {
+      } else
 
-        if ((i == DI_FIRE && config["fire_checkbox"]) || (i == DI_WATER && config["water_checkbox"]) || (i == DI_AC_POWER && config["power_checkbox"]) || (i == DI_DOOR && config["door_checkbox"]) || (i == DI_SMOKE && config["smoke_checkbox"])) {
-          callRelayBuzzerTurn(currentState);
-          //Serial.println("Sending: " + jsonTempData);
+        if ((i == DI_FIRE && config["fire_checkbox"]) || (i == DI_AC_POWER && config["power_checkbox"]) || (i == DI_DOOR && config["door_checkbox"]) || (i == DI_SMOKE && config["smoke_checkbox"])) {
+        callRelayBuzzerTurn(currentState);
+        //Serial.println("Sending: " + jsonTempData);
 
-          sendTemperatureDataToServerHttp(jsonTempData);
-        }
+        sendTemperatureDataToServerHttp(jsonTempData);
+      } else if ((i == DI_WATER && config["water_checkbox"])) {
+        callRelayBuzzerTurn(!currentState);
+        //Serial.println("Sending: " + jsonTempData);
+
+        sendTemperatureDataToServerHttp(jsonTempData);
       }
     }
     // Serial.println(String("DI: ") + String(i));
@@ -357,6 +361,7 @@ void updateRelayStatusAction(int relayNum, bool status) {
     pcf8574_RE1.digitalWrite(relayNum, status ? LOW : HIGH);
 
     updateJsonConfig("config.json", "relay" + String(relayNum), status ? "true" : "false");
+    publishConfigToMQTT();
   }
 }
 void updateRelayStatus(int relayNum) {
@@ -369,6 +374,7 @@ void updateRelayStatus(int relayNum) {
 
 
     updateJsonConfig("config.json", "relay" + String(relayNum), relayStates[relayNum] == LOW ? "false" : "true");
+    publishConfigToMQTT();
   }
 }
 void handleRelayControl() {
@@ -389,6 +395,7 @@ void relaysSetup() {
     pcf8574_RE1.digitalWrite(i, HIGH);
     //updating initial values
     updateJsonConfig("config.json", "relay" + String(i), "false");
+    publishConfigToMQTT();
   }
 
   Serial.println("Relay Page End----------------------");
@@ -428,7 +435,7 @@ void relayLoop() {
     doc["digital_input_number"] = 5;
     doc["type"] = "alarm";
     doc["doorOpen"] = false;
-doc["timestamp"] = millis();
+    doc["timestamp"] = millis();
     doc["buzzer_paused"] = false;
     doc["buzzer_notes"] = "buzzer_pause_expired";
 
@@ -479,6 +486,7 @@ void callRelayBuzzerTurn(bool buzzerShouldBeOn) {
       updateJsonConfig("config.json", "relay" + String(RELAY_LED), buzzerShouldBeOn ? "true" : "false");
 
       updateJsonConfig("config.json", "relay" + String(RELAY_BUZZER), buzzerShouldBeOn ? "true" : "false");
+      publishConfigToMQTT();
     }
   }
 }

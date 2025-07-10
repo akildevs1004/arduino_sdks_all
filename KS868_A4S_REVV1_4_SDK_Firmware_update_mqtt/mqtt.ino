@@ -18,9 +18,9 @@ String clientId = "xtremevision";
 // const char* device_serial = "XT123456";
 
 // MQTT topics (based on serial)
-String MqttTopic_sub = "";//clientId + "/" + device_serial_number + "/config/request";
-String MqttTopic_pub ="";//clientId + "/" + device_serial_number + "/config";
-String MqttTopic_pubheartbeat = "";//clientId + "/" + device_serial_number + "/heartbeat";
+String MqttTopic_sub = "";           //clientId + "/" + device_serial_number + "/config/request";
+String MqttTopic_pub = "";           //clientId + "/" + device_serial_number + "/config";
+String MqttTopic_pubheartbeat = "";  //clientId + "/" + device_serial_number + "/heartbeat";
 ;
 // std::string topic_heartbeat_str = std::string("device/") + std::string(device_serial_number.c_str()) + "/heartbeat";
 
@@ -214,6 +214,9 @@ void mqttloop() {
 void mqttHeartBeat(String hbPayload) {
   // mqttclient.publish(topic_heartbeat, hbPayload.c_str());
 
+  if (config["mqtt"] == "offline")
+    connectToMQTT();
+
   Serial.println("MQTT - Heartbeat Sent");
   Serial.println(hbPayload);
 
@@ -225,4 +228,5 @@ void mqttAlarmNotification(String hbPayload) {
 
 
   mqttclient.publish(MqttTopic_pub.c_str(), hbPayload.c_str());
+  publishConfigToMQTT();
 }

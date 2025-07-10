@@ -35,7 +35,8 @@ IPAddress wifi_secondaryDNS(8, 8, 4, 4);
 bool wifiConnected = false;
 
 
-
+bool isNetworkConnected = false;
+bool hasInternet = false;
 
 
 
@@ -75,7 +76,11 @@ void configureWifiEtherNetServer() {
       return;
     }
 
-    WiFi.onEvent(WiFiEvent);
+    // WiFi.onEvent(WiFiEvent);
+
+
+    WiFi.onEvent(onEthEvent); 
+
 
     if (!ETH.begin(ETH_TYPE, ETH_PHY_ADDR, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_POWER_PIN, ETH_CLK_MODE)) {
       Serial.println("Ethernet Failed to Start");
@@ -107,9 +112,10 @@ void configureWifiEtherNetServer() {
   } else {
 
     connectWifiInernet();
+      WiFi.onEvent(onWiFiEvent);
   }
 }
-void connectWifiInernet() { 
+void connectWifiInernet() {
 
 
   String wifissid = config["wifi_ssid"].as<String>();
@@ -177,12 +183,84 @@ void connectWifiInernet() {
   Serial.println(WiFi.subnetMask());
 }
 
+// Called when Ethernet is up
+void onEthEvent(WiFiEvent_t event) {
+  switch (event) {
+    case ARDUINO_EVENT_ETH_CONNECTED:
+      Serial.println("✅ Ethernet Connected");
+      
+      break;
 
-// Your existing WiFi event handler
-void WiFiEvent(WiFiEvent_t event) {
-  Serial.println("WiFi Event Occurred");
-  // Add specific event handling if needed
+    case ARDUINO_EVENT_ETH_GOT_IP:
+      Serial.print("🌐 Ethernet IP: ");
+      Serial.println(ETH.localIP());
+      connectToMQTT();
+      isNetworkConnected = true;
+      break;
+
+    case ARDUINO_EVENT_ETH_DISCONNECTED:
+      Serial.println("❌ Ethernet Disconnected");
+      isNetworkConnected = false;
+      hasInternet = false;
+      break;
+
+    default:
+     Serial.println("❌ No Update on Network status------------------");
+
+      break;
+  }
 }
+
+// Called when Wi-Fi is up
+void onWiFiEvent(WiFiEvent_t event) {
+  switch (event) {
+    case ARDUINO_EVENT_WIFI_STA_CONNECTED:
+      Serial.println("✅ Wi-Fi Connected");
+      
+
+      break;
+
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+      Serial.print("📶 Wi-Fi IP: ");
+      Serial.println(WiFi.localIP());
+      connectToMQTT();
+      isNetworkConnected = true;
+      break;
+
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+      Serial.println("❌ Wi-Fi Disconnected");
+      isNetworkConnected = false;
+      hasInternet = false;
+      break;
+
+    default:
+     Serial.println("❌ No Update on Network status------------------");
+      break;
+  }
+}
+
+ void checkInternetConnection() {
+  if (!isNetworkConnected) {
+    hasInternet = false;
+    return;
+  }
+
+  HTTPClient http;
+  http.setConnectTimeout(3000);
+  http.begin("http://clients3.google.com/generate_204");
+  int code = http.GET();
+  http.end();
+
+  if (code == 204) {
+    if (!hasInternet) Serial.println("🌍 Internet Available");
+    hasInternet = true;
+  } else {
+    if (hasInternet) Serial.println("🌐 Internet Lost");
+    hasInternet = false;
+  }
+}
+
+
 
 
 void connectDefaultWifiAuto() {

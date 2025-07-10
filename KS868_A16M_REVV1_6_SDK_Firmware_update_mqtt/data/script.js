@@ -334,6 +334,10 @@ function loadConfigFileData() {
       jsonData.eth_gateway == "{eth_gateway}" ? "" : jsonData.eth_gateway;
     document.getElementById("eth_subnet").value =
       jsonData.eth_subnet == "{eth_subnet}" ? "" : jsonData.eth_subnet;
+    document.getElementById("device_serial_number").value =
+      jsonData.device_serial_number == "{device_serial_number}"
+        ? ""
+        : jsonData.device_serial_number;
 
     document.getElementById("device_serial_number").value =
       jsonData.device_serial_number == "{device_serial_number}"

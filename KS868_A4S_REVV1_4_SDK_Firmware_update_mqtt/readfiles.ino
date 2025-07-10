@@ -158,6 +158,9 @@ void updateJsonConfig(String filename, String param, String value) {
       Serial.println("Failed to parse temperature_alerts_config JSON: " + String(error.c_str()));
       jsonDoc[param] = JsonArray();  // assign empty array as fallback
     }
+
+    delay(2000);
+    readAllSensors();
   } else if (value == "true") {
     jsonDoc[param] = true;
   } else if (value == "false") {
