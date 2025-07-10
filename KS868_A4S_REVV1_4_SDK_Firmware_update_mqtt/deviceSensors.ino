@@ -233,7 +233,7 @@ void readAllSensors() {
 
           // sendAlarmTriggerToSocketserver(jsonTempData);
 
-          if (!isTemperatureAlarmActive) {
+          if (sensors[i].previousAlarm != isTemperatureAlarmActive && !checkAnyAlarmOpen()) {
             callRelayBuzzerTurn(false);
           }
           if (abs(temperature - sensors[i].temperature) >= diffInTemperature || sensors[i].previousAlarm != isTemperatureAlarmActive)

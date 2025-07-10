@@ -175,8 +175,6 @@ void updateConfigServerToDevice(String message) {
         }
       }
     }
-
-     
   }
 
 
