@@ -199,9 +199,9 @@ void mqttsetup() {
   mqtt_port = config["mqtt_port"].as<int>();
   clientId = config["mqtt_clientId"].as<String>();
 
-   MqttTopic_sub = clientId +"-" + device_serial_number +  "/" + device_serial_number + "/config/request";
-  MqttTopic_pub = clientId +"-" + device_serial_number + "/" + device_serial_number + "/config";
-  MqttTopic_pubheartbeat = clientId +"-" + device_serial_number + "/" + device_serial_number + "/heartbeat";
+   MqttTopic_sub = clientId  +  "/" + device_serial_number + "/config/request";
+  MqttTopic_pub = clientId + "/" + device_serial_number + "/config";
+  MqttTopic_pubheartbeat = clientId   + "/" + device_serial_number + "/heartbeat";
 
 
   connectToMQTT();

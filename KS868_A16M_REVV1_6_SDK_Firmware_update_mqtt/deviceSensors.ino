@@ -18,6 +18,7 @@ struct SensorEntry {
   float humidity = 0.0;
   bool isOnline = false;
   float previousTemperature;
+  bool previousAlarm;
 };
 SensorEntry sensors[10];
 
@@ -83,6 +84,7 @@ const unsigned long TEMP_ALARM_INTERVAL = 1000 * 1;  // 1 minute in milliseconds
 float temperature, humidity;
 void readAllSensors() {
 
+  readConfig("config.json");
 
 
   String jsonTempData = "";
@@ -96,6 +98,8 @@ void readAllSensors() {
   sensorCount = config["max_temperature_sensor_count"];
   Serial.println("readAllSensors - " + String(sensorCount));
 
+  bool isTemperatureAlarmActive = false;
+
   for (int i = 0; i < sensorCount; i++) {
     {
       uint8_t result = sensors[i].modbus.readInputRegisters(0x0000, 2);
@@ -107,15 +111,17 @@ void readAllSensors() {
         temperature = (tempRaw < 10000) ? tempRaw * 0.1 : -1 * (tempRaw - 10000) * 0.1;
         humidity = humRaw * 0.1;
 
-        Serial.println("readAllSensors-Data " + String(i + 1) + " " + String(temperature) + " " + String(humidity));
+
+        Serial.println("readAllSensors-Data " + String(sensors[i].temperature) + " - " + String(i + 1) + " " + String(temperature) + " " + String(humidity));
 
 
         // 🔍 Compare with previous temperature
-        if (abs(temperature - sensors[i].temperature) >= diffInTemperature && temperature != sensors[i].temperature) {
+        // if (abs(temperature - sensors[i].temperature) >= diffInTemperature && temperature != sensors[i].temperature)
+        {
           //Serial.println("readAllSensors Changed " + String(i) + " " + String(sensors[i].temperature) + " " + String(temperature) + " - " + String(diffInTemperature));
 
 
-          temperatureChanged = true;
+          // temperatureChanged = true;
 
 
           //trigger Server API
@@ -167,11 +173,13 @@ void readAllSensors() {
                     doc["temperature_min"] = minTemp;
                     lastTempAlarmTime = currentTime;
                     callRelayBuzzerTurn(true);
+                    isTemperatureAlarmActive = true;
 
                     Serial.println("🔥 Temperature alarm sent--------------------------------------------");
                   } else {
                     Serial.println("⏱ Alarm suppressed (waiting interval)");
                   }
+                } else {
                 }
               }
               if (result["humidity"]["enabled"]) {
@@ -194,6 +202,8 @@ void readAllSensors() {
                     doc["humidity_min"] = minTemp;
                     lastTempAlarmTime = currentTime;
                     callRelayBuzzerTurn(true);
+                    isTemperatureAlarmActive = true;
+
 
                     Serial.println("🔥 Humidity alarm sent--------------------------------------------");
                   } else {
@@ -218,13 +228,20 @@ void readAllSensors() {
 
           // sendAlarmTriggerToSocketserver(jsonTempData);
 
-          sendTemperatureDataToServerHttp(jsonTempData);
-        }
+          if (!isTemperatureAlarmActive  && !checkAnyAlarmOpen()) {
+            callRelayBuzzerTurn(false);
+          }
+          if (abs(temperature - sensors[i].temperature) >= diffInTemperature || sensors[i].previousAlarm != isTemperatureAlarmActive)
+            sendTemperatureDataToServerHttp(jsonTempData);
+        }  //temperature change detected
+        if (abs(temperature - sensors[i].temperature) >= diffInTemperature)
+          sensorData = buildSensorJson();
 
         sensors[i].previousTemperature = sensors[i].temperature;
         sensors[i].temperature = temperature;
         sensors[i].humidity = humidity;
         sensors[i].isOnline = true;
+        sensors[i].previousAlarm = isTemperatureAlarmActive;
 
 
       } else {
@@ -242,9 +259,9 @@ void readAllSensors() {
   }  //for loop
 
 
-  if (temperatureChanged) {
-    sensorData = buildSensorJson();
-  }
+  // if (temperatureChanged) {
+  //   sensorData = buildSensorJson();
+  // }
 }
 
 JsonObject findSensorById(JsonArray array, int targetId) {
