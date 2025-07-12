@@ -90,14 +90,12 @@ bool relayStates[RELAY_COUNT] = { false };
 
 
 
-
-
 bool fire_alarm = false;
 bool waterLeakage = false;
 bool acPowerFailure = false;
 bool doorOpen = false;
 bool smoke_alarm = false;
-
+bool temperature_alarm = false;
 
 
 
@@ -111,6 +109,8 @@ void digitalSetup() {
   pcf8574_DI.begin();
   for (int i = 0; i < DI_COUNT; i++) {
     pcf8574_DI.pinMode(i, INPUT);
+
+
     lastDIStates[i] = (pcf8574_DI.digitalRead(i) == LOW);  // Initialize with current state
   }
 
@@ -121,15 +121,42 @@ void digitalSetup() {
 
 
 bool checkAnyAlarmOpen() {
-  isAAnylarmOn = false;
-  for (int i = 0; i < DI_COUNT; i++) {
 
-    if (lastDIStates[i]) {
-      isAAnylarmOn = true;
-    }
+
+  // Serial.println("------------");
+  // Serial.print(fire_alarm);
+  // Serial.print(waterLeakage);
+  // Serial.print(acPowerFailure);
+  // Serial.print(doorOpen);
+  // Serial.print(smoke_alarm);
+  // Serial.println(temperature_alarm);
+
+  if (fire_alarm || waterLeakage || acPowerFailure || doorOpen || smoke_alarm || temperature_alarm) {
+    return true;
   }
 
-  return isAAnylarmOn;
+
+  return false;
+  // return isAAnylarmOn;
+
+  // isAAnylarmOn = false;
+  // for (int i = 0; i < DI_COUNT; i++) {
+
+  //   if (i != 6 && lastDIStates[i]) {
+  //     isAAnylarmOn = true;
+  //   }
+  //   if (i == 6 && !lastDIStates[i]) {
+  //     isAAnylarmOn = true;
+  //   }
+
+  //   Serial.print(i);
+  //   Serial.print("-");
+  //   Serial.println(lastDIStates[i]);
+
+  //   Serial.println(isAAnylarmOn);
+  // }
+
+  // return isAAnylarmOn;
 }
 
 // void updateLatestAlarmStatus() {
@@ -156,11 +183,20 @@ bool checkAnyAlarmOpen() {
 // }
 void checkAllDI() {
 
+  // fire_alarm = false;
+  // waterLeakage = false;
+  // acPowerFailure = false;
+  // doorOpen = false;
+  // smoke_alarm = false;
+  // temperature_alarm = false;
+
   // Serial.println("-------------DIGITAL INPUT LOOP-----------------");
+  // isAAnylarmOn = false;
+
 
   for (int i = 0; i < DI_COUNT; i++) {
     bool currentState = (pcf8574_DI.digitalRead(i) == HIGH);  // Active HIGH
-    // Serial.println("Sensor " + String(i) + " - " + (currentState ? "On" : "Off") + " - Prev " + (lastDIStates[i] ? "On" : "Off"));
+                                                              // Serial.println("Sensor " + String(i) + " - " + (currentState ? "On" : "Off") + " - Prev " + (lastDIStates[i] ? "On" : "Off"));
 
 
     if (currentState != lastDIStates[i]) {
@@ -180,6 +216,11 @@ void checkAllDI() {
       // doc["temperature"] = temperature;
       // doc["humidity"] = humidity;
 
+      // doc["fire_alarm"] = 0;
+      // doc["waterLeakage"] = 0;
+      // doc["smoke_alarm"] = 0;
+      // doc["acPowerFailure"] = 0;
+      // doc["doorOpen"] = 0;
 
 
 
@@ -189,14 +230,14 @@ void checkAllDI() {
         fire_alarm = currentState;
         doc["fire_alarm"] = fire_alarm ? 1 : 0;
       } else if (i == DI_WATER) {
-        waterLeakage = currentState;
-        doc["waterLeakage"] = waterLeakage ? 0 : 1;
+        waterLeakage = !currentState;
+        doc["waterLeakage"] = currentState ? 0 : 1;
       } else if (i == DI_AC_POWER) {
         acPowerFailure = currentState;
         doc["acPowerFailure"] = acPowerFailure ? 1 : 0;
       } else if (i == DI_DOOR) {
-        doorOpen = currentState;
-        doc["doorOpen"] = doorOpen ? 1 : 0;
+        // doorOpen = currentState;
+        doc["doorOpen"] = currentState ? 1 : 0;
       } else if (i == DI_SMOKE) {
         smoke_alarm = currentState;
         doc["smoke_alarm"] = smoke_alarm ? 1 : 0;
@@ -229,12 +270,22 @@ void checkAllDI() {
       } else
 
         if ((i == DI_FIRE && config["fire_checkbox"]) || (i == DI_AC_POWER && config["power_checkbox"]) || (i == DI_DOOR && config["door_checkbox"]) || (i == DI_SMOKE && config["smoke_checkbox"])) {
-        callRelayBuzzerTurn(currentState);
+
+        if (currentState) {
+          isAAnylarmOn = true;
+          callRelayBuzzerTurn(currentState);
+        }
+
         //Serial.println("Sending: " + jsonTempData);
 
         sendTemperatureDataToServerHttp(jsonTempData);
       } else if ((i == DI_WATER && config["water_checkbox"])) {
-        callRelayBuzzerTurn(!currentState);
+
+        if (!currentState) {
+          isAAnylarmOn = true;
+          callRelayBuzzerTurn(!currentState);
+        }
+
         //Serial.println("Sending: " + jsonTempData);
 
         sendTemperatureDataToServerHttp(jsonTempData);
@@ -271,7 +322,10 @@ void checkAllDI() {
     {
       buzzerTriggeredForDoor = false;
     }
-  }
+  }  //loop
+
+  if (!checkAnyAlarmOpen())
+    callRelayBuzzerTurn(false);
 }
 void cheKDoorKeepOpenStatus(bool currentState) {
 
@@ -298,6 +352,10 @@ void cheKDoorKeepOpenStatus(bool currentState) {
     if ((millis() - doorOpenStartTime >= 1000 * 60 * doorOpenDurationTime) && !buzzerTriggeredForDoor) {  // 3 minutes
       //Serial.println(String("🚨 Door has been open for over  ") + String(doorOpenDurationTime) + String(" minutes! Triggering buzzer."));
       callRelayBuzzerTurn(true);
+
+
+      // isAAnylarmOn = true;
+
       buzzerTriggeredForDoor = true;
 
 
@@ -313,6 +371,8 @@ void cheKDoorKeepOpenStatus(bool currentState) {
 
       // doc["humidity"] = humidity;
       doc["doorOpen"] = 1;
+      isAAnylarmOn = true;
+      doorOpen = true;
 
       serializeJson(doc, jsonTempData);
       //Serial.println("Sending: " + jsonTempData);
@@ -326,7 +386,8 @@ void cheKDoorKeepOpenStatus(bool currentState) {
   } else {  // Door is closed
     doorOpenStartTime = 0;
     buzzerTriggeredForDoor = false;
-    callRelayBuzzerTurn(false);
+
+    doorOpen = false;
   }
 }
 
@@ -411,14 +472,7 @@ void relaysSetup() {
 void relayLoop() {
 
 
-  // Serial.print("max_siren_pause ");
 
-  // Serial.print(max_siren_pause);
-  // Serial.print(" - isALarm ");
-
-  // Serial.println(checkAnyAlarmOpen());
-
-  // Serial.println(String("Buzzer   - Alarm ") + (checkAnyAlarmOpen() ? "Open" : "Closed") + String(millis() - buzzerPauseStartTime));
 
   if (buzzerPaused && millis() - buzzerPauseStartTime >= 1000 * 60 * max_siren_pause && checkAnyAlarmOpen()) {
     buzzerPaused = false;
@@ -475,18 +529,22 @@ void callRelayBuzzerTurn(bool buzzerShouldBeOn) {
   if (config["siren_checkbox"]) {
 
 
-    // if (config["relay" + String(RELAY_BUZZER)] != buzzerShouldBeOn)
     {
-      // Serial.println(String("New Buzzer - ") + (buzzerShouldBeOn ? "Buzzer On" : "Buzzer Off"));
 
 
       pcf8574_RE1.digitalWrite(RELAY_BUZZER, buzzerShouldBeOn ? LOW : HIGH);  // LOW = ON
       pcf8574_RE1.digitalWrite(RELAY_LED, buzzerShouldBeOn ? LOW : HIGH);     // LOW = ON
 
       updateJsonConfig("config.json", "relay" + String(RELAY_LED), buzzerShouldBeOn ? "true" : "false");
-
       updateJsonConfig("config.json", "relay" + String(RELAY_BUZZER), buzzerShouldBeOn ? "true" : "false");
-      publishConfigToMQTT();
+
+      bool buzzerStatus = (pcf8574_RE1.digitalRead(RELAY_BUZZER) == LOW);
+
+      if (buzzerStatus != config["relay" + String(RELAY_BUZZER)])
+        publishConfigToMQTT();
     }
+    // if (pcf8574_RE1.digitalWrite(RELAY_BUZZER, LOW) !buzzerShouldBeOn) {
+    //   checkAllDI();
+    // }
   }
 }

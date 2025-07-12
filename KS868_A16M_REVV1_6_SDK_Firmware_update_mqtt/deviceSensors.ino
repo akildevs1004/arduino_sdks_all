@@ -99,6 +99,7 @@ void readAllSensors() {
   Serial.println("readAllSensors - " + String(sensorCount));
 
   bool isTemperatureAlarmActive = false;
+ 
 
   for (int i = 0; i < sensorCount; i++) {
     {
@@ -110,7 +111,7 @@ void readAllSensors() {
 
         temperature = (tempRaw < 10000) ? tempRaw * 0.1 : -1 * (tempRaw - 10000) * 0.1;
         humidity = humRaw * 0.1;
-
+        isTemperatureAlarmActive = false;
 
         Serial.println("readAllSensors-Data " + String(sensors[i].temperature) + " - " + String(i + 1) + " " + String(temperature) + " " + String(humidity));
 
@@ -145,6 +146,7 @@ void readAllSensors() {
           //get settings of Temperature sensor address 1 details
           // DynamicJsonDocument doc(2048);
           // deserializeJson(doc, json);
+          temperature_alarm=false;
           if (config["temperature_alerts_config"]) {
             JsonObject result = findSensorById(config["temperature_alerts_config"], i + 1);
 
@@ -171,6 +173,10 @@ void readAllSensors() {
                     doc["timestamp"] = millis();
                     doc["temperature_max"] = maxTemp;
                     doc["temperature_min"] = minTemp;
+                    // isAAnylarmOn = true;
+
+                    temperature_alarm=true;
+
                     lastTempAlarmTime = currentTime;
                     callRelayBuzzerTurn(true);
                     isTemperatureAlarmActive = true;
@@ -201,6 +207,9 @@ void readAllSensors() {
                     doc["humidity_max"] = maxTemp;
                     doc["humidity_min"] = minTemp;
                     lastTempAlarmTime = currentTime;
+                    // isAAnylarmOn = true;
+                    temperature_alarm=true;
+
                     callRelayBuzzerTurn(true);
                     isTemperatureAlarmActive = true;
 
@@ -227,9 +236,16 @@ void readAllSensors() {
 
 
           // sendAlarmTriggerToSocketserver(jsonTempData);
+          Serial.println(isTemperatureAlarmActive);
+          Serial.println(isAAnylarmOn);
 
-          if (!isTemperatureAlarmActive  && !checkAnyAlarmOpen()) {
-            callRelayBuzzerTurn(false);
+          // Serial.println(checkAnyAlarmOpen());
+
+          if (!isTemperatureAlarmActive && !checkAnyAlarmOpen() ) {
+            Serial.println("Buzzer is OFF");
+
+            
+              callRelayBuzzerTurn(false);
           }
           if (abs(temperature - sensors[i].temperature) >= diffInTemperature || sensors[i].previousAlarm != isTemperatureAlarmActive)
             sendTemperatureDataToServerHttp(jsonTempData);
