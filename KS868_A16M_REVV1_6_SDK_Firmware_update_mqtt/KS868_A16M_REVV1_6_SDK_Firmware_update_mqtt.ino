@@ -48,6 +48,9 @@ String firmWareVersion = "2.1";
 
 bool loadingConfigFile = false;
 
+bool isNetworkConnected = false;
+bool hasInternet = false;
+
 void setup() {
   Serial.begin(115200);
 
@@ -187,21 +190,23 @@ void loop() {
 
     updateFirmWareLoop();
     Deviceloop();
-  }
+    networkLoop();
+  }  //loop
 
   delay(200);  // Non-blocking delay
 }
 
-int heartBeatSeconds = 10;
+int heartBeatSeconds = 20;
 unsigned long previousHeartbeatMillis = 0;  // Stores last time heartbeat was sent
 void handleHeartbeat() {
 
   // Serial.print("Heartbeat ");
   // Serial.println(config["heartbeat"].as<int>());
 
+  heartBeatSeconds = config["heartbeat"].as<int>();
 
-  if (config["heartbeat"].as<int>() > 10) {
-    heartBeatSeconds = 10;
+  if (heartBeatSeconds <=5) {
+    heartBeatSeconds = 20;
   }
   unsigned long currentMillis = millis();
   if (currentMillis - previousHeartbeatMillis >= heartBeatSeconds * 1000) {

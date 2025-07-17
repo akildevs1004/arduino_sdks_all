@@ -99,7 +99,7 @@ void readAllSensors() {
   Serial.println("readAllSensors - " + String(sensorCount));
 
   bool isTemperatureAlarmActive = false;
- 
+
 
   for (int i = 0; i < sensorCount; i++) {
     {
@@ -146,7 +146,7 @@ void readAllSensors() {
           //get settings of Temperature sensor address 1 details
           // DynamicJsonDocument doc(2048);
           // deserializeJson(doc, json);
-          temperature_alarm=false;
+          temperature_alarm = false;
           if (config["temperature_alerts_config"]) {
             JsonObject result = findSensorById(config["temperature_alerts_config"], i + 1);
 
@@ -175,7 +175,7 @@ void readAllSensors() {
                     doc["temperature_min"] = minTemp;
                     // isAAnylarmOn = true;
 
-                    temperature_alarm=true;
+                    temperature_alarm = true;
 
                     lastTempAlarmTime = currentTime;
                     callRelayBuzzerTurn(true);
@@ -208,7 +208,7 @@ void readAllSensors() {
                     doc["humidity_min"] = minTemp;
                     lastTempAlarmTime = currentTime;
                     // isAAnylarmOn = true;
-                    temperature_alarm=true;
+                    temperature_alarm = true;
 
                     callRelayBuzzerTurn(true);
                     isTemperatureAlarmActive = true;
@@ -241,13 +241,15 @@ void readAllSensors() {
 
           // Serial.println(checkAnyAlarmOpen());
 
-          if (!isTemperatureAlarmActive && !checkAnyAlarmOpen() ) {
+          if (!isTemperatureAlarmActive && !checkAnyAlarmOpen()) {
             Serial.println("Buzzer is OFF");
 
-            
-              callRelayBuzzerTurn(false);
+
+            callRelayBuzzerTurn(false);
           }
-          if (abs(temperature - sensors[i].temperature) >= diffInTemperature || sensors[i].previousAlarm != isTemperatureAlarmActive)
+
+          
+          if (abs(temperature - sensors[i].temperature) >= diffInTemperature || abs(temperature - sensors[i].previousTemperature) >= diffInTemperature || sensors[i].previousAlarm != isTemperatureAlarmActive)
             sendTemperatureDataToServerHttp(jsonTempData);
         }  //temperature change detected
         if (abs(temperature - sensors[i].temperature) >= diffInTemperature)

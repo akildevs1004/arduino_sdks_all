@@ -253,7 +253,7 @@ void readAllSensors() {
             
               callRelayBuzzerTurn(false);
           }
-          if (abs(temperature - sensors[i].temperature) >= diffInTemperature || sensors[i].previousAlarm != isTemperatureAlarmActive)
+          if (abs(temperature - sensors[i].temperature) >= diffInTemperature || abs(temperature - sensors[i].previousTemperature) >= diffInTemperature || sensors[i].previousAlarm != isTemperatureAlarmActive)
             sendTemperatureDataToServerHttp(jsonTempData);
         }  //temperature change detected
         if (abs(temperature - sensors[i].temperature) >= diffInTemperature)

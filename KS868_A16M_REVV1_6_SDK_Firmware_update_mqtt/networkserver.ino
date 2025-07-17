@@ -34,10 +34,27 @@ IPAddress wifi_secondaryDNS(8, 8, 4, 4);
 
 bool wifiConnected = false;
 
+ 
 
-bool isNetworkConnected = false;
-bool hasInternet = false;
+unsigned long lastInternetCheck = 0;
+const unsigned long checkInterval = 3600000; // 1 hour = 60*60*1000 ms
 
+void networkLoop() {
+
+
+  unsigned long nowInternet = millis();
+
+  if (nowInternet - lastInternetCheck >= checkInterval) {
+    lastInternetCheck = nowInternet;
+    checkInternetConnection();
+
+    if (!hasInternet) {
+      Serial.println("🔁 Restarting due to no internet...");
+      delay(2000);
+      ESP.restart();
+    }
+  }
+}
 
 
 //---------------------------NETWORK SETTINGS END------------------------------------------
@@ -62,7 +79,7 @@ void configureWifiEtherNetServer() {
     DeviceIPNumber = config["eth_ip"].as<String>();
 
     ETH.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
-
+    delay(2000);
 
     // Your existing Ethernet setup code...
     if (!ETH.begin(ETH_TYPE, ETH_PHY_ADDR, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_POWER_PIN, ETH_CLK_MODE)) {
@@ -79,7 +96,7 @@ void configureWifiEtherNetServer() {
     // WiFi.onEvent(WiFiEvent);
 
 
-    WiFi.onEvent(onEthEvent); 
+
 
 
     if (!ETH.begin(ETH_TYPE, ETH_PHY_ADDR, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_POWER_PIN, ETH_CLK_MODE)) {
@@ -90,6 +107,7 @@ void configureWifiEtherNetServer() {
     //   if ( ETH.linkStatus()==ETH_LINK_OFF) {
     //   delay(1000);
     // }
+    delay(5000);
 
     // Apply static IP configuration
     if (!ETH.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
@@ -100,7 +118,7 @@ void configureWifiEtherNetServer() {
       DeviceIPNumber = ETH.localIP().toString();
     }
 
-
+    WiFi.onEvent(onEthEvent);
     // if (ETH.linkUp()) {
     //   configTime(0, 0, "pool.ntp.org");
     //   delay(2000);  // Wait for NTP sync
@@ -112,7 +130,7 @@ void configureWifiEtherNetServer() {
   } else {
 
     connectWifiInernet();
-      WiFi.onEvent(onWiFiEvent);
+    WiFi.onEvent(onWiFiEvent);
   }
 }
 void connectWifiInernet() {
@@ -188,13 +206,14 @@ void onEthEvent(WiFiEvent_t event) {
   switch (event) {
     case ARDUINO_EVENT_ETH_CONNECTED:
       Serial.println("✅ Ethernet Connected");
-      
+      isNetworkConnected = true; 
+
       break;
 
     case ARDUINO_EVENT_ETH_GOT_IP:
       Serial.print("🌐 Ethernet IP: ");
       Serial.println(ETH.localIP());
-     delay(5000);
+      delay(5000);
       mqttsetup();
       isNetworkConnected = true;
       break;
@@ -206,7 +225,7 @@ void onEthEvent(WiFiEvent_t event) {
       break;
 
     default:
-     Serial.println("❌ No Update on Network status------------------");
+      Serial.println("❌ No Update on Network status------------------");
 
       break;
   }
@@ -217,7 +236,8 @@ void onWiFiEvent(WiFiEvent_t event) {
   switch (event) {
     case ARDUINO_EVENT_WIFI_STA_CONNECTED:
       Serial.println("✅ Wi-Fi Connected");
-      
+
+      isNetworkConnected = true; 
 
       break;
 
@@ -236,13 +256,15 @@ void onWiFiEvent(WiFiEvent_t event) {
       break;
 
     default:
-     Serial.println("❌ No Update on Network status------------------");
+      Serial.println("❌ No Update on Network status------------------");
       break;
   }
 }
 
- void checkInternetConnection() {
+void checkInternetConnection() {
   if (!isNetworkConnected) {
+
+    Serial.println("🌐 ❌ No Network");
     hasInternet = false;
     return;
   }
@@ -254,10 +276,12 @@ void onWiFiEvent(WiFiEvent_t event) {
   http.end();
 
   if (code == 204) {
-    if (!hasInternet) Serial.println("🌍 Internet Available");
+    // if (!hasInternet)
+     Serial.println("🌍 ✅  Internet Available");
     hasInternet = true;
   } else {
-    if (hasInternet) Serial.println("🌐 Internet Lost");
+    // if (hasInternet)
+     Serial.println("🌐 ❌ Internet Lost");
     hasInternet = false;
   }
 }

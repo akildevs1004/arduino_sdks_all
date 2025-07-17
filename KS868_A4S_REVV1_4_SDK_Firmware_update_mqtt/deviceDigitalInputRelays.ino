@@ -422,7 +422,6 @@ void updateRelayStatusAction(int relayNum, bool status) {
   if (relayNum >= 0 && relayNum < RELAY_COUNT) {
 
     pcf8574_RE1.digitalWrite(relayNum, status ? LOW : HIGH);
-
     updateJsonConfig("config.json", "relay" + String(relayNum), status ? "true" : "false");
     publishConfigToMQTT();
   }
