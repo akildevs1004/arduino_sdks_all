@@ -47,6 +47,7 @@ void networkLoop() {
 
   if (nowInternet - lastInternetCheck >= checkInterval) {
     lastInternetCheck = nowInternet;
+
     checkInternetConnection();
 
     if (!hasInternet) {
@@ -208,11 +209,20 @@ void connectWifiInernet() {
 // Called when Ethernet is up
 void onEthEvent(WiFiEvent_t event) {
   switch (event) {
-    case ARDUINO_EVENT_ETH_CONNECTED:
-      Serial.println("✅ Ethernet Connected");
+
+    case ARDUINO_EVENT_ETH_START:
+      Serial.println("🔌 Ethernet Started");
+      delay(5000);
 
       isNetworkConnected = true;
-
+      mqttsetup();
+      checkInternetConnection();
+      // ETH.setHostname("esp32-ethernet");
+      break;
+    case ARDUINO_EVENT_ETH_CONNECTED:
+      Serial.println("✅ Ethernet Connected");
+      isNetworkConnected = true;
+      checkInternetConnection();
       break;
 
     case ARDUINO_EVENT_ETH_GOT_IP:
@@ -221,16 +231,34 @@ void onEthEvent(WiFiEvent_t event) {
       delay(5000);
       mqttsetup();
       isNetworkConnected = true;
+      checkInternetConnection();
       break;
+    case ARDUINO_EVENT_ETH_STOP:
+      Serial.println("⛔ Ethernet Stopped");
+      isNetworkConnected = false;
+      hasInternet = false;
+      pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
+      updateJsonConfig("config.json", "internet", "offline");
 
+
+      break;
     case ARDUINO_EVENT_ETH_DISCONNECTED:
       Serial.println("❌ Ethernet Disconnected");
       isNetworkConnected = false;
       hasInternet = false;
+      pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
+      updateJsonConfig("config.json", "internet", "offline");
+
+
       break;
 
     default:
       Serial.println("❌ No Update on Network status------------------");
+      isNetworkConnected = false;
+      hasInternet = false;
+      pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
+      updateJsonConfig("config.json", "internet", "offline");
+
 
       break;
   }
@@ -239,9 +267,26 @@ void onEthEvent(WiFiEvent_t event) {
 // Called when Wi-Fi is up
 void onWiFiEvent(WiFiEvent_t event) {
   switch (event) {
+    case ARDUINO_EVENT_WIFI_READY:
+      Serial.println("📶 Wi-Fi Ready");
+      delay(5000);
+      mqttsetup();
+      isNetworkConnected = true;
+      checkInternetConnection();
+
+      break;
+
+      // case ARDUINO_EVENT_WIFI_CONNECTED:
+      //   Serial.println("✅ Wi-Fi Connected to AP");
+      //   isNetworkConnected = true;
+
+      //   break;
+
+
     case ARDUINO_EVENT_WIFI_STA_CONNECTED:
       Serial.println("✅ Wi-Fi Connected");
       isNetworkConnected = true;
+      checkInternetConnection();
 
 
       break;
@@ -250,6 +295,8 @@ void onWiFiEvent(WiFiEvent_t event) {
       Serial.print("📶 Wi-Fi IP: ");
       Serial.println(WiFi.localIP());
       delay(5000);
+
+      checkInternetConnection();
       mqttsetup();
       isNetworkConnected = true;
       break;
@@ -258,21 +305,31 @@ void onWiFiEvent(WiFiEvent_t event) {
       Serial.println("❌ Wi-Fi Disconnected");
       isNetworkConnected = false;
       hasInternet = false;
+      pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
+      updateJsonConfig("config.json", "internet", "offline");
+
+
       break;
 
     default:
       Serial.println("❌ No Update on Network status------------------");
+      isNetworkConnected = false;
+      hasInternet = false;
+      pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
+      updateJsonConfig("config.json", "internet", "offline");
+
+
       break;
   }
 }
 
 void checkInternetConnection() {
-  if (!isNetworkConnected) {
+  // if (!isNetworkConnected) {
 
-    Serial.println("🌐 ❌ No Network");
-    hasInternet = false;
-    return;
-  }
+  //   Serial.println("🌐 ❌ No Network");
+  //   hasInternet = false;
+  //   return;
+  // }
 
   HTTPClient http;
   http.setConnectTimeout(3000);
@@ -282,12 +339,17 @@ void checkInternetConnection() {
 
   if (code == 204) {
     // if (!hasInternet)
-     Serial.println("🌍 ✅  Internet Available");
+    Serial.println("🌍 ✅  Internet Available");
     hasInternet = true;
+    pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, LOW);  // LOW = ON
+    updateJsonConfig("config.json", "internet", "online");
+
   } else {
     // if (hasInternet)
-     Serial.println("🌐 ❌ Internet Lost");
+    Serial.println("🌐 ❌ Internet Lost");
     hasInternet = false;
+    pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
+    updateJsonConfig("config.json", "internet", "offline");
   }
 }
 

@@ -38,6 +38,8 @@ bool isAAnylarmOn = false;
 #define RELAY_LAMP 2
 #define RELAY_BUZZER 3
 #define RELAY_LED 4
+#define RELAY_INTERNET_LED 5
+
 
 
 #define DI_FIRE 0
