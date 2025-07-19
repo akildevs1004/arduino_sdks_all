@@ -22,13 +22,19 @@ document.addEventListener("DOMContentLoaded", function () {
   updateHeaderConfigFileData();
 });
 function updateRelaysData(jsonData) {
+  try{
   for (let i = 0; i < 8; i++) {
     const element = document.getElementById("relaystatus" + i);
+    const elementdiv = document.getElementById("divrelaystatus" + i);
+
     const isOn = jsonData["relay" + i];
     element.innerHTML = isOn ? "ON" : "OFF";
-    // element.style.backgroundColor = isOn ? 'green' : 'red';
+      elementdiv.style.backgroundColor = isOn ? 'green' : '';
+      elementdiv.style.color = isOn ? 'white' : 'black';
+
     // element.style.color = 'white'; // ✅ Set font color to white
   }
+  }catch(e){}
 }
 function updateHeaderConfigFileData() {
   const content = document.getElementById("config_json").value;

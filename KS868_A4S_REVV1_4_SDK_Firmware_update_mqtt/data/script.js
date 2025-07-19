@@ -14,8 +14,8 @@ function toggleConnectionFields() {
     wifiFields.style.display = "";
     wifiPasswordField.style.display = "";
     wifiIpField.style.display = "";
-    wifigateway.style.display = "";
-    wifiEthernet.style.display = "";
+    wifigateway.style.display = "none";
+    wifiEthernet.style.display = "none";
     ethernetFields.style.display = "none";
     ethGatewayField.style.display = "none";
     ethSubnetField.style.display = "none";
@@ -244,7 +244,7 @@ function generateTimeOptionsHeartbeat() {
   const increments = [5, 10, 15, 30]; // Time increments in seconds and minutes
 
   // Generate options for seconds (5s to 55s)
-  for (let sec = 1; sec <= 10; sec += 1) {
+  for (let sec = 1; sec <= 20; sec += 1) {
     options.push({ id: "heartbeat", value: sec, label: `${sec} seconds` });
   }
 
@@ -278,6 +278,12 @@ function generateTimeOptions() {
   return options;
 }
 function loadConfigFileData() {
+
+ 
+
+
+
+
   const content = document.getElementById("config_json").value;
 
   //   console.log(content); // Raw text content
@@ -291,6 +297,14 @@ function loadConfigFileData() {
     // console.info("Server URL:", jsonData.server_url);
 
     updateHeaderConfigFileData();
+
+    const select = document.getElementById("wifi_ssid");
+          select.innerHTML = ""; // clear old
+           
+            const option = document.createElement("option");
+            option.value =  jsonData.wifi_ssid;
+            option.text =  jsonData.wifi_ssid;
+            select.appendChild(option);
 
     document.getElementById("wifi_ssid").value =
       jsonData.wifi_ssid == "{wifi_ssid}" ? "" : jsonData.wifi_ssid;
@@ -346,8 +360,10 @@ function loadConfigFileData() {
 
     // document.getElementById("server_url").value =
     //   jsonData.server_url == "{server_url}" ? "" : jsonData.server_url;
+
+     
     document.getElementById("heartbeat").value =
-      jsonData.heartbeat == "{heartbeat}" ? "" : jsonData.heartbeat;
+      jsonData.heartbeat == "{heartbeat}" ? 20 : jsonData.heartbeat;
 
     document.getElementById("reset_settings_duration").value =
       jsonData.heartbeat == "{reset_settings_duration}"
@@ -412,7 +428,7 @@ function loadConfigFileData() {
     // document.getElementById("humidity_checkbox").checked =
     //   jsonData.humidity_checkbox;
     /*
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 8; i++) {
       const element = document.getElementById("relaystatus" + i);
       const isOn = jsonData["relay" + i];
       element.innerHTML = isOn ? "ON" : "OFF";
@@ -544,3 +560,45 @@ function fetchData() {
 
 // Call fetchData every 5000 milliseconds (5 seconds)
 setInterval(fetchData, 1000 * 60);
+
+
+  /* function saveWiFi() {
+      const wifi_ssid = document.getElementById("wifi_ssid").value;
+      const password = document.getElementById("password").value;
+
+      fetch("/wifi-save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ wifi_ssid, password })
+      })
+        .then(res => res.text())
+        .then(txt => alert(txt))
+        .catch(err => alert("Save error: " + err));
+    }
+
+    */
+
+  function scanWiFi() {
+
+    document.getElementById("wifiloading").innerHTML="Loading........";
+
+//document.getElementById("wifi_ssid").style.display="none";
+
+      fetch('/wifi-scan')
+        .then(response => response.json())
+        .then(data => {
+          const select = document.getElementById("wifi_ssid");
+          select.innerHTML = ""; // clear old
+          data.forEach(ssid => {
+            const option = document.createElement("option");
+            option.value = ssid;
+            option.text = ssid;
+            select.appendChild(option);
+          });
+    document.getElementById("wifiloading").innerHTML="<span style=color:green>wifi scanning is completed</span>";
+
+        })
+        .catch(err => alert("Error scanning WiFi: " + err));
+    }

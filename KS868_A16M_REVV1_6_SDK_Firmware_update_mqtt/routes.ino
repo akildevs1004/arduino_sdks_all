@@ -66,6 +66,10 @@ void routes() {
   // server.on("/updatefirmwaredatafiles", HTTP_GET, handleUpdatePage);
   // server.on("/updatefirmwaredatafilessubmit", HTTP_POST, handleFileUpload);
   //server.onNotFound(handleNotFound);
+
+
+  server.on("/wifi-scan", HTTP_GET, handleWiFiScan);
+  server.on("/wifi-save", HTTP_POST, handleWiFiSave);
 }
 
 
@@ -689,5 +693,49 @@ void sendTemperatureDataToServer(String jsonData) {
     client.stop();
   } else {
     Serial.println(F("❌ Connection failed"));
+  }
+}
+
+// ==== WiFi Scan AJAX ====
+void handleWiFiScan() {
+  int n = WiFi.scanNetworks();
+  DynamicJsonDocument doc(1024);
+  JsonArray arr = doc.to<JsonArray>();
+
+  for (int i = 0; i < n; i++) {
+    arr.add(WiFi.SSID(i));
+  }
+
+  String json;
+  serializeJson(doc, json);
+  server.send(200, "application/json", json);
+}
+
+// ==== WiFi Save AJAX ====
+void handleWiFiSave() {
+  if (server.method() != HTTP_POST) {
+    server.send(405, "text/plain", "Method Not Allowed");
+    return;
+  }
+
+  String body = server.arg("plain");
+  DynamicJsonDocument doc(256);
+  DeserializationError err = deserializeJson(doc, body);
+  if (err) {
+    server.send(400, "text/plain", "Bad JSON");
+    return;
+  }
+
+  String ssid = doc["ssid"];
+  String password = doc["password"];
+
+  File file = LittleFS.open("/wifi.txt", "w");
+  if (file) {
+    file.println(ssid);
+    file.println(password);
+    file.close();
+    server.send(200, "text/plain", "✅ WiFi credentials saved.");
+  } else {
+    server.send(500, "text/plain", "Failed to save.");
   }
 }

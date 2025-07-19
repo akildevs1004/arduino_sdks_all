@@ -17,7 +17,7 @@
                                     <tr>
                                         <td>FAN (Relay 1)</td>
                                         <td>
-                                            <button onclick="updateRelayStatus(0,'relaystatus0')">
+                                            <button onclick="updateRelayStatus(0,'relaystatus0')" id="divrelaystatus0">
                                                 <div id="relaystatus0">OFF</div>
                                             </button>
                                         </td>
@@ -25,7 +25,7 @@
                                     <tr>
                                         <td>AC (Relay 2)</td>
                                         <td>
-                                            <button onclick="updateRelayStatus(1,'relaystatus1')">
+                                            <button onclick="updateRelayStatus(1,'relaystatus1')" id="divrelaystatus1">
                                                 <div id="relaystatus1">OFF</div>
                                             </button>
                                         </td>
@@ -33,7 +33,7 @@
                                     <tr>
                                         <td>Light (Relay 3)</td>
                                         <td>
-                                            <button onclick="updateRelayStatus(2,'relaystatus2')">
+                                            <button onclick="updateRelayStatus(2,'relaystatus2')" id="divrelaystatus2">
                                                 <div id="relaystatus2">OFF</div>
                                             </button>
                                         </td>
@@ -41,23 +41,23 @@
                                     <tr>
                                         <td>Siren (Relay 4)</td>
                                         <td>
-                                            <button onclick="updateRelayStatus(3,'relaystatus3')">
+                                            <button onclick="updateRelayStatus(3,'relaystatus3')" id="divrelaystatus3">
                                                 <div id="relaystatus3">OFF</div>
                                             </button>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Relay 5</td>
+                                        <td>Alarm Light</td>
                                         <td>
-                                            <button onclick="updateRelayStatus(4,'relaystatus4')">
+                                            <button onclick="updateRelayStatus(4,'relaystatus4')" id="divrelaystatus4">
                                                 <div id="relaystatus4">OFF</div>
                                             </button>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Relay 6</td>
+                                        <td>Internet/Network</td>
                                         <td>
-                                            <button onclick="updateRelayStatus(5,'relaystatus5')">
+                                            <button   id="divrelaystatus5">
                                                 <div id="relaystatus5">OFF</div>
                                             </button>
                                         </td>
@@ -65,7 +65,7 @@
                                     <tr>
                                         <td>Relay 7</td>
                                         <td>
-                                            <button onclick="updateRelayStatus(6,'relaystatus6')">
+                                            <button onclick="updateRelayStatus(6,'relaystatus6')" id="divrelaystatus6">
                                                 <div id="relaystatus6">OFF</div>
                                             </button>
                                         </td>
@@ -73,7 +73,7 @@
                                     <tr>
                                         <td>Relay 8</td>
                                         <td>
-                                            <button onclick="updateRelayStatus(7,'relaystatus7')">
+                                            <button onclick="updateRelayStatus(7,'relaystatus7')" id="divrelaystatus7">
                                                 <div id="relaystatus7">OFF</div>
                                             </button>
                                         </td>
@@ -95,6 +95,22 @@
     function updateRelayStatus(relayid, divID) {
         document.getElementById(divID).innerHTML =
             document.getElementById(divID).innerHTML == "ON" ? "OFF" : "ON";
+
+
+
+ 
+    const elementdiv = document.getElementById("divrelaystatus" +relayid);
+
+      
+      elementdiv.style.backgroundColor = isOn ? 'green' : '';
+      elementdiv.style.color = isOn ? 'white' : 'black';
+
+
+
+
+
+
+
         fetch("http://" + ipAddress + "/changerelay_status?num=" + relayid) // Replace with your API
             .then((response) => response.json())
             .then((data) => {

@@ -34,10 +34,11 @@ IPAddress wifi_secondaryDNS(8, 8, 4, 4);
 
 bool wifiConnected = false;
 
- 
+
+
 
 unsigned long lastInternetCheck = 0;
-const unsigned long checkInterval = 3600000; // 1 hour = 60*60*1000 ms
+const unsigned long checkInterval = 3600000;  // 1 hour = 60*60*1000 ms
 
 void networkLoop() {
 
@@ -46,6 +47,7 @@ void networkLoop() {
 
   if (nowInternet - lastInternetCheck >= checkInterval) {
     lastInternetCheck = nowInternet;
+
     checkInternetConnection();
 
     if (!hasInternet) {
@@ -55,6 +57,7 @@ void networkLoop() {
     }
   }
 }
+
 
 
 //---------------------------NETWORK SETTINGS END------------------------------------------
@@ -79,8 +82,8 @@ void configureWifiEtherNetServer() {
     DeviceIPNumber = config["eth_ip"].as<String>();
 
     ETH.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
-    delay(2000);
 
+    delay(2000);
     // Your existing Ethernet setup code...
     if (!ETH.begin(ETH_TYPE, ETH_PHY_ADDR, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_POWER_PIN, ETH_CLK_MODE)) {
       Serial.println("Ethernet Failed to Start");
@@ -108,7 +111,6 @@ void configureWifiEtherNetServer() {
     //   delay(1000);
     // }
     delay(5000);
-
     // Apply static IP configuration
     if (!ETH.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
       Serial.println("Failed to configure Ethernet with static IP");
@@ -117,6 +119,8 @@ void configureWifiEtherNetServer() {
       Serial.println(ETH.localIP());
       DeviceIPNumber = ETH.localIP().toString();
     }
+
+    isNetworkConnected = true;
 
     WiFi.onEvent(onEthEvent);
     // if (ETH.linkUp()) {
@@ -131,6 +135,7 @@ void configureWifiEtherNetServer() {
 
     connectWifiInernet();
     WiFi.onEvent(onWiFiEvent);
+    isNetworkConnected = true;
   }
 }
 void connectWifiInernet() {
@@ -202,6 +207,7 @@ void connectWifiInernet() {
 }
 
 
+
 // Called when Ethernet is up
 void onEthEvent(WiFiEvent_t event) {
   switch (event) {
@@ -235,6 +241,8 @@ void onEthEvent(WiFiEvent_t event) {
       hasInternet = false;
       pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
       updateJsonConfig("config.json", "internet", "offline");
+      updateJsonConfig("config.json", "relay5", "false");
+
 
 
       break;
@@ -244,6 +252,8 @@ void onEthEvent(WiFiEvent_t event) {
       hasInternet = false;
       pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
       updateJsonConfig("config.json", "internet", "offline");
+      updateJsonConfig("config.json", "relay5", "false");
+
 
 
       break;
@@ -254,6 +264,8 @@ void onEthEvent(WiFiEvent_t event) {
       hasInternet = false;
       pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
       updateJsonConfig("config.json", "internet", "offline");
+      updateJsonConfig("config.json", "relay5", "false");
+
 
 
       break;
@@ -303,6 +315,8 @@ void onWiFiEvent(WiFiEvent_t event) {
       hasInternet = false;
       pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
       updateJsonConfig("config.json", "internet", "offline");
+      updateJsonConfig("config.json", "relay5", "false");
+
 
 
       break;
@@ -313,6 +327,7 @@ void onWiFiEvent(WiFiEvent_t event) {
       hasInternet = false;
       pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
       updateJsonConfig("config.json", "internet", "offline");
+      updateJsonConfig("config.json", "relay5", "false");
 
 
       break;
@@ -339,6 +354,10 @@ void checkInternetConnection() {
     hasInternet = true;
     pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, LOW);  // LOW = ON
     updateJsonConfig("config.json", "internet", "online");
+    updateJsonConfig("config.json", "relay5", "true");
+
+
+     
 
   } else {
     // if (hasInternet)
@@ -346,6 +365,8 @@ void checkInternetConnection() {
     hasInternet = false;
     pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
     updateJsonConfig("config.json", "internet", "offline");
+    updateJsonConfig("config.json", "relay5", "false");
+
   }
 }
 

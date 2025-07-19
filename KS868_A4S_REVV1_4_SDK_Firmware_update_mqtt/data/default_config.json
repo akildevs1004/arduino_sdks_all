@@ -38,8 +38,8 @@
     {
       "sensor_address_id": 1,
       "temperature": {
-        "enabled": true,
-        "max": "25",
+        "enabled": false,
+        "max": "30",
         "min": "20",
         "sms": false,
         "call": false,

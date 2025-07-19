@@ -66,6 +66,7 @@ void setup() {
     delay(1000);
   } else {
     Serial.println("Checking Config File is exist or not.........");
+     delay(5000);
     ensureConfigExists();
     delay(200);
     String savedData = readConfig("config.json");
@@ -160,6 +161,7 @@ void setup() {
 
     updateFirmWaresetup();
     uploadHTMLsetup();
+    checkInternetConnection();
   }
 }
 

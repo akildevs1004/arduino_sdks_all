@@ -206,6 +206,8 @@ void connectWifiInernet() {
   Serial.println(WiFi.subnetMask());
 }
 
+
+
 // Called when Ethernet is up
 void onEthEvent(WiFiEvent_t event) {
   switch (event) {
@@ -239,6 +241,8 @@ void onEthEvent(WiFiEvent_t event) {
       hasInternet = false;
       pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
       updateJsonConfig("config.json", "internet", "offline");
+      updateJsonConfig("config.json", "relay5", "false");
+
 
 
       break;
@@ -248,6 +252,8 @@ void onEthEvent(WiFiEvent_t event) {
       hasInternet = false;
       pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
       updateJsonConfig("config.json", "internet", "offline");
+      updateJsonConfig("config.json", "relay5", "false");
+
 
 
       break;
@@ -258,6 +264,8 @@ void onEthEvent(WiFiEvent_t event) {
       hasInternet = false;
       pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
       updateJsonConfig("config.json", "internet", "offline");
+      updateJsonConfig("config.json", "relay5", "false");
+
 
 
       break;
@@ -307,6 +315,8 @@ void onWiFiEvent(WiFiEvent_t event) {
       hasInternet = false;
       pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
       updateJsonConfig("config.json", "internet", "offline");
+      updateJsonConfig("config.json", "relay5", "false");
+
 
 
       break;
@@ -317,6 +327,7 @@ void onWiFiEvent(WiFiEvent_t event) {
       hasInternet = false;
       pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
       updateJsonConfig("config.json", "internet", "offline");
+      updateJsonConfig("config.json", "relay5", "false");
 
 
       break;
@@ -343,6 +354,10 @@ void checkInternetConnection() {
     hasInternet = true;
     pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, LOW);  // LOW = ON
     updateJsonConfig("config.json", "internet", "online");
+    updateJsonConfig("config.json", "relay5", "true");
+
+
+     
 
   } else {
     // if (hasInternet)
@@ -350,6 +365,8 @@ void checkInternetConnection() {
     hasInternet = false;
     pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
     updateJsonConfig("config.json", "internet", "offline");
+    updateJsonConfig("config.json", "relay5", "false");
+
   }
 }
 
