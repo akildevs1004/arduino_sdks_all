@@ -1,0 +1,16 @@
+{
+  "serverURL": "https://backend.myhotel2cloud.com/api/update_device_room_fill_status",
+  "wifiSSID": "akil",
+  "wifiPassword": "Akil1234",
+  "intervalHeartbeat": 60,
+  "server_ip": "64.227.164.43",
+  "server_port": "6002",
+  "gmtTimeZone": "444",
+  "socketConnectionStatus": "Disconencted",
+  "SerialNumber":"TNJ000027" ,
+  "ipAddress":"192.168.2.100"  ,
+  "mqtt_server": "165.22.222.17",
+  "mqtt_port": 1883,
+  "mqtt_clientId": "xtremevision_switch" ,
+  "password": "password" 
+}
