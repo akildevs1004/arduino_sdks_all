@@ -165,7 +165,7 @@ void handleSaveConfig() {
 
     intervalHeartbeat = server.arg("intervalHeartbeat").toInt();
 
-    if (intervalHeartbeat <= 10) intervalHeartbeat = 10;
+    if (intervalHeartbeat <= 10) intervalHeartbeat = 60;
     intervalHeartbeat = intervalHeartbeat;
     server_ip = server.arg("server_ip");
     server_port = server.arg("server_port");

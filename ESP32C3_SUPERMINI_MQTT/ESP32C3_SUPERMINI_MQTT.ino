@@ -24,6 +24,9 @@ String mqtt_clientId = "xtremevision_switch";
 // Pin and configuration variables
 const int switchPin = 3;
 const int LED_PIN = 8;
+const unsigned long FAST_BLINK = 300;   // No Wi-Fi
+const unsigned long SLOW_BLINK = 1000;  // Wi-Fi OK, No Internet
+
 String serialNumber = "ESP32T001";  // Default Serial Number
 
 String device_serial_number = "";
@@ -31,7 +34,7 @@ String device_serial_number = "";
 String serverURL, wifiSSID, wifiPassword, ipAddress;
 
 const char* USERNAME = "admin";
-  String PASSWORD = "password";
+String PASSWORD = "password";
 
 String temperatureThreshold = "30";
 int previousSwitchState = HIGH;
@@ -49,8 +52,10 @@ IPAddress gateway(192, 168, 1, 1);
 IPAddress subnet(255, 255, 255, 0);
 String deviceIPaddress = "";
 
-int intervalHeartbeat = 20;  // Interval at which to send heartbeat (10 seconds)
-bool InternetStatus = false;
+int intervalHeartbeat = 60;  // Interval at which to send heartbeat (10 seconds)
+ 
+
+
 // Function declarations
 bool saveConfig();
 bool loadConfig();
@@ -68,10 +73,16 @@ bool socketConnectServer();
 void socketDeviceHeartBeatToServer();
 bool testInternet();
 
+void networkLoop();
+void blinkBlueLight(int times);
 
 String firmWareVersion = "1.1";
 const char* ssid = "akil";
 // const char* password = "Akil1234";
+
+// -------- Global states --------
+bool isNetworkConnected = false;  // Wi-Fi link (WL_CONNECTED)
+bool hasInternet = false;         // Internet reachability
 
 
 WiFiClient client;  // Create a client object
@@ -83,8 +94,17 @@ void setup() {
   Serial.begin(115200);  // Start the Serial communication at 115200 baud rate
   delay(1000);
 
-  pinMode(switchPin, INPUT_PULLUP);
 
+
+  pinMode(switchPin, INPUT_PULLUP);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, HIGH);  //OFF - No network
+
+  WiFi.mode(WIFI_OFF);
+  delay(1000);
+  //This line hides the viewing of ESP as wifi hotspot
+  WiFi.mode(WIFI_STA);
+  networkSetup();
   // Initialize LittleFS
   if (!LittleFS.begin(true)) {
     Serial.println("Error mounting LittleFS. Restarting...");
@@ -97,11 +117,12 @@ void setup() {
   }
 
   connectToWiFi();
+  WiFi.onEvent(onWiFiEvent);
   Serial.println("Web server started at: --------------------" + WiFi.localIP().toString());
   String ipStr = WiFi.localIP().toString();
 
   updateJsonConfig("config.json", "ipAddress", ipStr.c_str());
-  sendSwitchStatus(digitalRead(switchPin));
+
 
   logmessage("Web server started at: " + WiFi.localIP().toString());
 
@@ -113,39 +134,35 @@ void setup() {
   // logmessage("Hello Initialize");
 
 
-  pinMode(LED_PIN, OUTPUT);
+
 
   // socketConnectServer();
 
-  InternetStatus = testInternet();
-  if (InternetStatus) {
-    digitalWrite(LED_PIN, HIGH);
+    
+  if (testInternet()) {
+
     mqttsetup();
   }
 
   else {
-    digitalWrite(LED_PIN, LOW);
+
     Serial.println("XXXXXXXXXXXXXXXXXXXXXXXX No Internet Connection XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
   }
   updateFirmWaresetup();
 
   Serial.print("Version--------------------------------------------------------------------------");
   Serial.println(firmWareVersion);
-
-
-  
 }
 
 void loop() {
   server.handleClient();
   handleSwitchState();
-
-  mqttloop();
-  handleHeartbeat();
-  delay(1000);  // Non-blocking delay
-
-
   networkLoop();
+  if (hasInternet) {
+    mqttloop();
+    handleHeartbeat();
+  }
+  delay(1000);  // Non-blocking delay
 }
 
 
@@ -157,53 +174,40 @@ void handleSwitchState() {
     previousSwitchState = switchState;
   }
 }
-void blinkBlueLight(int times = 1, int on_ms = 150, int off_ms = 150) {
-  pinMode(LED_PIN, OUTPUT);
-  for (int i = 0; i < times; i++) {
-    digitalWrite(LED_PIN, HIGH);
-    delay(on_ms);
-    digitalWrite(LED_PIN, LOW);
-    delay(off_ms);
-  }
-}
-
 
 
 
 void connectToWiFi() {
-  Serial.println("Connecting to WiFi...");
+  Serial.println("Connecting to WiFi... Initiated " + wifiSSID + " " + wifiPassword);
 
   if (!wifiSSID.isEmpty() && !wifiPassword.isEmpty()) {
 
-    WiFi.mode(WIFI_OFF);
-    delay(1000);
-    //This line hides the viewing of ESP as wifi hotspot
-    WiFi.mode(WIFI_STA);
+    // WiFi.mode(WIFI_OFF);
+    // delay(1000);
+    // //This line hides the viewing of ESP as wifi hotspot
+    // WiFi.mode(WIFI_STA);
 
 
     WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
     int retryCount = 0;
 
-    while (WiFi.status() != WL_CONNECTED && retryCount < 10) {
+    while (WiFi.status() != WL_CONNECTED && retryCount < 5) {
       delay(1000);
-      Serial.println("Connecting to WiFi...");
+      Serial.println("Connecting to WiFi..." + wifiSSID);
       retryCount++;
     }
 
     if (WiFi.status() == WL_CONNECTED) {
       Serial.println("Connected to WiFi!");
 
-      digitalWrite(LED_PIN, HIGH);
-
-
+isNetworkConnected=true;
 
       updateJsonConfig("config.json", "wifiConnection", "Connected");
 
       // setStaticIP();
 
-    } else {
+    } else if (wifiPassword.isEmpty()) {
 
-      digitalWrite(LED_PIN, LOW);
 
       Serial.println("Failed to connect. Starting WiFiManager...");
 
@@ -213,7 +217,7 @@ void connectToWiFi() {
 
       WiFi.mode(WIFI_AP);
       if (WiFi.softAP(wifiSSID.c_str())) {
-        Serial.println("✅ AP started!");
+        Serial.println("✅ AP started! 111111111111111111111111111111111111111111111");
         Serial.print("AP SSID: ");
         Serial.println(wifiSSID.c_str());
         Serial.print("AP IP Address: ");
@@ -231,28 +235,24 @@ void connectToWiFi() {
   } else {
     Serial.println("EMPTY Password");
 
+    Serial.println("Failed to connect. Starting WiFiManager...");
+
+    updateJsonConfig("config.json", "wifiConnection", "Disconnected");
+
+    Serial.println("\n❌ Failed to connect, starting AP mode...");
+
+    WiFi.mode(WIFI_AP);
+    if (WiFi.softAP(wifiSSID.c_str())) {
+      Serial.println("✅ AP started! with Empty Password ");
+      Serial.print("AP SSID: ");
+      Serial.println(wifiSSID.c_str());
+      Serial.print("AP IP Address: ");
+      Serial.println(WiFi.softAPIP());
+    } else {
+      Serial.println("❌ Failed to start AP!");
+    }
+
     wifiManagerSetup();
-
-
-    //  if (wifiPassword.isEmpty() || jsonConfig["wifiPassword"].as<String>()=="")
-    // {
-    //   IPAddress currentIP = WiFi.localIP();
-    //   // Derive base from current network, force .100
-    //   IPAddress newIP(currentIP[0], currentIP[1], currentIP[2], 100);
-    //   IPAddress subnet(255, 255, 255, 0);
-    //   IPAddress gw(currentIP[0], currentIP[1], currentIP[2], 1);  // typical router
-    //   IPAddress dns(8, 8, 8, 8);
-
-    //   if (WiFi.config(newIP, gw, subnet, dns)) {
-    //     Serial.print("🔧 Forced Static IP: ");
-    //     Serial.println(WiFi.localIP());
-    //     updateJsonConfig("config.json", "ipAddress", WiFi.localIP().toString().c_str());
-    //   } else {
-    //     Serial.println("❌ Failed to set forced static IP (.100)");
-    //   }
-
-
-    // }
   }
 }
 
@@ -378,9 +378,9 @@ void sendSwitchStatus(int status) {
     Serial.println("Response: " + resp);
 
     if (code > 0 && code < 400) {
-      blinkBlueLight(2);  // success blink
+      /////////blinkLight(FAST_BLINK); // success blink
     } else {
-      blinkBlueLight(5, 70, 70);  // error blink
+      //blinkBlueLight(5, 70, 70);  // error blink
     }
     http.end();
   } else {
@@ -463,49 +463,4 @@ void logmessage(String message) {
 
   http.end();
   */
-}
-
-
-bool testInternet() {
-  uint16_t timeoutMs = 5000;
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("❌ WiFi not connected");
-    return false;
-  }
-
-  // // 1) DNS resolve test
-  // IPAddress resolved;
-  // const char* host = "example.com";  // simple, fast to resolve
-  // bool dnsOK = (WiFi.hostByName(host, resolved) == 1 && resolved != (uint32_t)0);
-  // Serial.printf("%s DNS resolve: %s -> %s\n",
-  //               dnsOK ? "✅" : "❌",
-  //               host,
-  //               dnsOK ? resolved.toString().c_str() : "(failed)");
-  // if (!dnsOK) return false;  // no internet without DNS (for most cases)
-
-  // // 2) HTTP 204 connectivity check (very small, fast)
-  // // Google’s connectivity endpoint usually returns 204 if the internet is reachable
-  // // Use HTTP (not HTTPS) to avoid TLS complexity on tiny checks
-  HTTPClient http;
-  http.setTimeout(timeoutMs);
-  const char* probe = "http://clients3.google.com/generate_204";
-  if (!http.begin(probe)) {
-    Serial.println("❌ HTTP begin() failed");
-    return false;
-  }
-  int code = http.GET();  // should be 204 if OK
-  http.end();
-
-  bool httpOK = (code == 204);
-  Serial.printf("%s HTTP 204 check [%s] -> code: %d\n",
-                httpOK ? "✅" : "❌", probe, code);
-
-  // 3) (Optional) ICMP ping the resolved IP (uncomment if ESP32Ping is installed)
-  /*
-  bool pingOK = Ping.ping(resolved, 2); // 2 attempts
-  Serial.printf("%s Ping %s\n", pingOK ? "✅" : "❌", resolved.toString().c_str());
-  if (!pingOK) return false;
-  */
-
-  return httpOK;
 }

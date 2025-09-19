@@ -52,7 +52,7 @@ void MqttCallback(char* topic, byte* payload, unsigned int length) {
 
 
   if (msg == "heartbeat") {
-     Serial.printf("Received heartbeat heartbeat......................");
+    Serial.printf("Received heartbeat heartbeat......................");
     String heartbeatData;
     DynamicJsonDocument heartbeatDoc2(2048);
     heartbeatDoc2["serialNumber"] = jsonConfig["SerialNumber"];
@@ -87,6 +87,8 @@ void publishMessageToMQTT(String payload) {
 
   // 6. Debug output
   if (sent) {
+
+    blinkLight(FAST_BLINK);
     Serial.println("✅ MQTT publish success");
     Serial.println("Payload size: " + String(payload.length()) + " bytes");
 #ifdef DEBUG
@@ -147,6 +149,7 @@ void publishConfigToMQTT() {
 
   // 6. Debug output
   if (sent) {
+    blinkLight(FAST_BLINK);
     Serial.println("✅ MQTT publish success");
     Serial.println("Payload size: " + String(payload.length()) + " bytes");
 #ifdef DEBUG
@@ -208,7 +211,7 @@ void updateConfigThrougMqtt(String message) {
 
 
 void connectToMQTT() {
-
+   
   const char* mqtt_server1 = mqtt_server.c_str();
   ;  // e.g. "192.168.2.10"
   int mqtt_port1 = mqtt_port;
@@ -221,7 +224,7 @@ void connectToMQTT() {
       Serial.println("MQTT connected");
       mqttclient.setBufferSize(3000);  // Must be ≥ your max payload
       mqttclient.subscribe(MqttTopic_sub.c_str());
-      
+
 
       Serial.println("Subscribed to: " + MqttTopic_sub);
 
@@ -236,11 +239,13 @@ void connectToMQTT() {
       Serial.print("MQTT connect failed. State: ");
       Serial.println(mqttclient.state());
 
+
+
       updateJsonConfig("config.json", "mqtt", "offline");
       delay(2000);
     }
   } else {
-    Serial.print("MQTT not Connected ");
+    Serial.println("MQTT not Connected ");
   }
 }
 
@@ -265,22 +270,50 @@ void mqttsetup() {
 }
 
 void mqttloop() {
-  if (!mqttclient.connected()) {
+  if (!mqttclient.connected() && hasInternet ) {
     connectToMQTT();
   }
   mqttclient.loop();
 }
 
 void mqttHeartBeat(String hbPayload) {
-  // mqttclient.publish(topic_heartbeat, hbPayload.c_str());
 
-  if (jsonConfig["mqtt"] == "offline")
-    connectToMQTT();
 
-  Serial.println("MQTT - Heartbeat Sent");
-  Serial.println(hbPayload);
 
-  mqttclient.publish(MqttTopic_pubheartbeat.c_str(), hbPayload.c_str());
+
+  bool checkInternetStatus = testInternet();
+  if (!checkInternetStatus)
+    connectToWiFi();
+
+  if (checkInternetStatus) {
+
+
+
+
+
+
+
+    // mqttclient.publish(topic_heartbeat, hbPayload.c_str());
+
+    if (jsonConfig["mqtt"] == "offline")
+      connectToMQTT();
+
+    Serial.println("MQTT - Heartbeat Sent");
+    Serial.println(hbPayload);
+
+    bool sent = mqttclient.publish(MqttTopic_pubheartbeat.c_str(), hbPayload.c_str());
+
+
+
+    if (sent) {
+      blinkLight(FAST_BLINK);
+      Serial.println("✅ MQTT publish success");
+
+
+    } else {
+      Serial.println("❌ MQTT publish failed1");
+    }
+  }
 }
 void mqttAlarmNotification(String hbPayload) {
   Serial.println("MQTT - Alarm Sent");
