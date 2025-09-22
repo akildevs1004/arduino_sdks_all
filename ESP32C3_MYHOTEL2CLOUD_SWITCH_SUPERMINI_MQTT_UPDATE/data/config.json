@@ -7,7 +7,7 @@
   "server_port": "6002",
   "gmtTimeZone": "444",
   "socketConnectionStatus": "Disconencted",
-  "SerialNumber":"TNJ000027" ,
+  "SerialNumber":"TNJ000029" ,
   "ipAddress":"192.168.2.100"  ,
   "mqtt_server": "165.22.222.17",
   "mqtt_port": 1883,
