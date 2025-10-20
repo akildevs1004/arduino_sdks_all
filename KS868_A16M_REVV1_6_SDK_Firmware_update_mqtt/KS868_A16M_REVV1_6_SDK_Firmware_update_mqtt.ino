@@ -38,13 +38,14 @@ HTTPClient http;
 int cloudAccountActiveDaysRemaining = 100;
 unsigned long lastRun = 0;
 const unsigned long interval = 24UL * 60UL * 60UL * 1000UL;  // 24 hours in milliseconds
+//partition
 String serverURL = "";
 String todayDate = "";
-String default_device_serial_number = "XT400002";
+String default_device_serial_number = "XTH251003";  //PARKING Device
 String device_serial_number = "";
 bool USE_ETHERNET = true;
 bool USE_DEFAULT_WIFIMANGER = false;
-String firmWareVersion = "2.1";
+String firmWareVersion = "10.25";
 
 bool loadingConfigFile = false;
 
@@ -160,7 +161,7 @@ void setup() {
 void loop() {
   // if (!loadingConfigFile) //do not load while saving configuration file
   {
-
+    Serial.println("Looping Started...............");
     server.handleClient();
     if (WiFi.status() == WL_CONNECTED || USE_ETHERNET) {
 
@@ -191,9 +192,15 @@ void loop() {
       updateJsonConfig("config.json", "internet", "offline");
     }
 
-    updateFirmWareLoop();
+    Serial.println("Deviceloop Looping Started...............");
     Deviceloop();
+    Serial.println("networkLoop Looping Started...............");
     networkLoop();
+    Serial.println("Looping Closed...............");
+
+    Serial.println("Firmware Looping Started...............");
+
+    updateFirmWareLoop();
   }  //loop
 
   delay(200);  // Non-blocking delay
@@ -208,7 +215,7 @@ void handleHeartbeat() {
 
   heartBeatSeconds = config["heartbeat"].as<int>();
 
-  if (heartBeatSeconds <=5) {
+  if (heartBeatSeconds <= 5) {
     heartBeatSeconds = 20;
   }
   unsigned long currentMillis = millis();
@@ -279,12 +286,21 @@ String replaceHeaderContent(String html) {
 
 
 
+  Serial.println("---------------------CONFIG REPLACE-------------------");
+  Serial.println(DeviceIPNumber);
+  Serial.println(config["eth_ip"].as<String>());
 
 
+  Serial.println("---------------------CONFIG REPLACE-------------------");
 
 
   html.replace("{firmWareVersion}", firmWareVersion);
   html.replace("{ipAddress}", DeviceIPNumber);
+  if (DeviceIPNumber == "")
+    html.replace("{ipAddress}", config["eth_ip"].as<String>());
+
+
+
   html.replace("{loginErrorMessage}", loginErrorMessage);
   html.replace("{GlobalWebsiteResponseMessage}", GlobalWebsiteResponseMessage);
   html.replace("{GlobalWebsiteErrorMessage}", GlobalWebsiteErrorMessage);
@@ -293,7 +309,8 @@ String replaceHeaderContent(String html) {
   html.replace("{cloud_account_expire}", config["cloud_account_expire"].as<String>());
   html.replace("{cloudAccountActiveDaysRemaining}", String(cloudAccountActiveDaysRemaining));
 
-
+  GlobalWebsiteResponseMessage = "";
+  GlobalWebsiteErrorMessage = "";
 
   return html;
 }

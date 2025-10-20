@@ -38,7 +38,7 @@ bool isAAnylarmOn = false;
 #define RELAY_LAMP 2
 #define RELAY_BUZZER 3
 #define RELAY_LED 4
-#define RELAY_INTERNET_LED 5
+#define RELAY_INTERNET_LED 7
 
 #define DI_FIRE 0
 #define DI_WATER 1
@@ -190,7 +190,9 @@ void checkAllDI() {
   // smoke_alarm = false;
   // temperature_alarm = false;
 
-  // Serial.println("-------------DIGITAL INPUT LOOP-----------------");
+  Serial.print("-------------DIGITAL INPUT LOOP-----------------");
+  Serial.println(DI_COUNT);
+
   // isAAnylarmOn = false;
 
 
@@ -291,7 +293,9 @@ void checkAllDI() {
         sendTemperatureDataToServerHttp(jsonTempData);
       }
     }
-    // Serial.println(String("DI: ") + String(i));
+    Serial.println(String("DI: ") + String(i));
+    //Serial.println(String("DI: ") + String(DI_FACTORY_RESET));
+
     // if (i == DI_FACTORY_RESET && currentState) {
     //   restoreDefaultConfig();
     // }
@@ -329,7 +333,7 @@ void checkAllDI() {
 }
 void cheKDoorKeepOpenStatus(bool currentState) {
 
-  Serial.println(String("Door   - ") + (currentState ? "Open" : "Closed") + String(millis() - doorOpenStartTime));
+  //Serial.println(String("Door   - ") + (currentState ? "Open" : "Closed") + String(millis() - doorOpenStartTime));
 
 
   int doorOpenDurationTime = 3;

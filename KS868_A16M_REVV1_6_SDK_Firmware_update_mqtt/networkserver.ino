@@ -38,7 +38,7 @@ bool wifiConnected = false;
 
 
 unsigned long lastInternetCheck = 0;
-const unsigned long checkInterval = 3600000;  // 1 hour = 60*60*1000 ms
+const unsigned long checkInterval = 60 * 60 * 1000;  // 1 hour = 60*60*1000 ms
 
 void networkLoop() {
 
@@ -50,7 +50,7 @@ void networkLoop() {
 
     checkInternetConnection();
 
-    if (!hasInternet) {
+    if (!hasInternet || config["mqtt"] == "offline") {
       Serial.println("🔁 Restarting due to no internet...");
       delay(2000);
       ESP.restart();
@@ -69,8 +69,170 @@ void startNetworkProcessStep1() {
 
   configureWifiEtherNetServer();  //server start
 }
+void configureWifiEtherNetServer() {
+  // Apply configuration
+  if (USE_ETHERNET) {
 
 
+
+    // 1) Start ETH (DHCP)
+    if (!ETH.begin(ETH_TYPE, ETH_PHY_ADDR, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_POWER_PIN, ETH_CLK_MODE)) {
+      Serial.println("[ETH] Failed to start");
+      return;
+    }
+
+    // 2) Wait for link + (optional) DHCP
+    uint32_t t0 = millis();
+    while (!ETH.linkUp() && millis() - t0 < 10000) delay(50);
+    if (!ETH.linkUp()) {
+      Serial.println("[ETH] Link timeout");
+      return;
+    }
+
+    delay(1000);
+    t0 = millis();
+    while (ETH.localIP() == INADDR_NONE && millis() - t0 < 10000) delay(50);
+
+    IPAddress ip0 = ETH.localIP();
+    Serial.print("[ETH] Initial IP: ");
+    Serial.println(ip0);
+
+    Serial.println(ip0[0]);
+    Serial.println(ip0[1]);
+    Serial.println(ip0[2]);
+
+
+    Serial.println(ip0[3]);
+    Serial.println(config["eth_ip"].as<String>());
+
+    if (config["eth_ip"].as<String>() == "0.0.0.0" || ip0 == "0.0.0.0") {
+      Serial.println("Failed to connect. Restarting...");
+      delay(3000);
+      return;
+    }
+    // 3) If config.eth_ip is empty → force 192.168.N.200 (reuse N from DHCP)
+
+
+    String eth_ip_str = config["eth_ip"].as<String>();
+
+    IPAddress ipStored;
+    ipStored.fromString(eth_ip_str);
+
+    bool invalidConfig =
+      !config.containsKey("eth_ip") || ip0[2] != ipStored[2] || eth_ip_str.isEmpty() || eth_ip_str == "undefined" || eth_ip_str == "null" || eth_ip_str == "0.0.0.0" || eth_ip_str == "192.168.0.200";
+
+    bool invalidRuntime =
+      (ip0[0] == 0 && ip0[1] == 0 && ip0[2] == 0 && ip0[3] == 0);
+    int N = ip0[2];
+
+    //if Config Ethernet is Empty
+    if (invalidConfig || invalidRuntime) {
+      Serial.println("[ETH] Invalid IP or configuration detected — Default .200 ");
+      //delay(1000);
+      //ESP.restart();
+      //}
+
+
+
+      //if (config["eth_ip"].as<String>().isEmpty() || config["eth_ip"].as<String>() == "undefined"  || config["eth_ip"].as<String>() == "null" || ip0  == "0.0.0.0" || config["eth_ip"].as<String>() == "0.0.0.0") {
+      // if (ip0[0] == 192 && ip0[1] == 168)
+      // {
+      delay(1000);
+
+      Serial.println(N);
+      // If already .200, nothing to do
+      if (ip0[3] != 200 && N != 0) {
+
+        IPAddress newIP(192, 168, N, 200);
+
+        // Prefer DHCP-provided gateway if it matches 192.168.N.*
+        IPAddress dhcpGW = ETH.gatewayIP();
+        IPAddress dhcpMask = ETH.subnetMask();
+        IPAddress dhcpDNS1 = ETH.dnsIP(0);
+        IPAddress dhcpDNS2 = ETH.dnsIP(1);
+
+        IPAddress gw = (dhcpGW[0] == 192 && dhcpGW[1] == 168 && dhcpGW[2] == N)
+                         ? dhcpGW
+                         : IPAddress(192, 168, N, 1);
+
+        IPAddress mask = (dhcpMask != INADDR_NONE) ? dhcpMask : IPAddress(255, 255, 255, 0);
+        if (dhcpDNS1 == INADDR_NONE) dhcpDNS1 = gw;  // router as DNS if missing
+        if (dhcpDNS2 == INADDR_NONE) dhcpDNS2 = IPAddress(1, 1, 1, 1);
+
+        Serial.printf("[ETH] eth_ip empty → forcing %s\n", newIP.toString().c_str());
+        if (!ETH.config(newIP, gw, mask, dhcpDNS1, dhcpDNS2)) {
+          Serial.println("[ETH] Failed to apply static; keeping DHCP IP.");
+        } else {
+          Serial.print("[ETH] Forced IP now: ");
+          Serial.println(ETH.localIP());
+
+
+          updateJsonConfig("config.json", "eth_ip", newIP.toString().c_str());
+          updateJsonConfig("config.json", "eth_gateway", gw.toString().c_str());
+          updateJsonConfig("config.json", "eth_subnet", mask.toString().c_str());
+        }
+      } else {
+        Serial.println("[ETH] Already on .200; no change needed.");
+      }
+      // } else {
+      //   // Not a 192.168.*.* network → leave DHCP as-is
+      //   Serial.println("[ETH] Not 192.168.x.x; leaving DHCP IP unchanged.");
+      // }
+    } else {
+      local_IP.fromString(config["eth_ip"].as<String>());
+      gateway.fromString(config["eth_gateway"].as<String>());
+      subnet.fromString(config["eth_subnet"].as<String>());
+
+      DeviceIPNumber = config["eth_ip"].as<String>();
+
+      ETH.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
+
+      delay(2000);
+      // Your existing Ethernet setup code...
+      if (!ETH.begin(ETH_TYPE, ETH_PHY_ADDR, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_POWER_PIN, ETH_CLK_MODE)) {
+        Serial.println("Ethernet Failed to Start");
+      }
+
+
+
+
+      if (!ETH.begin(ETH_TYPE, ETH_PHY_ADDR, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_POWER_PIN, ETH_CLK_MODE)) {
+        Serial.println("Ethernet Failed to Start");
+        return;
+      }
+
+
+      delay(5000);
+      // Apply static IP configuration
+      if (!ETH.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
+        Serial.println("Failed to configure Ethernet with static IP");
+      } else {
+        Serial.println("Ethernet Static IP: ");
+        Serial.println(ETH.localIP());
+        DeviceIPNumber = ETH.localIP().toString();
+
+        isNetworkConnected = true;
+        DeviceIPNumber = ETH.localIP().toString();
+        isNetworkConnected = true;
+        Serial.print("[ETH] Final IP: ");
+        Serial.println(DeviceIPNumber);
+
+        WiFi.onEvent(onEthEvent);
+      }
+    }
+
+
+    WiFi.onEvent(onEthEvent);
+
+    // return true;
+  } else {
+
+    connectWifiInternet(); 
+    WiFi.onEvent(onWiFiEvent);
+    isNetworkConnected = true;
+  }
+}
+/*
 void configureWifiEtherNetServer() {
   // Apply configuration
   if (USE_ETHERNET) {
@@ -96,10 +258,7 @@ void configureWifiEtherNetServer() {
       return;
     }
 
-    // WiFi.onEvent(WiFiEvent);
-
-
-
+  
 
 
     if (!ETH.begin(ETH_TYPE, ETH_PHY_ADDR, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_POWER_PIN, ETH_CLK_MODE)) {
@@ -107,15 +266,13 @@ void configureWifiEtherNetServer() {
       return;
     }
 
-    //   if ( ETH.linkStatus()==ETH_LINK_OFF) {
-    //   delay(1000);
-    // }
+     
     delay(5000);
     // Apply static IP configuration
     if (!ETH.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
       Serial.println("Failed to configure Ethernet with static IP");
     } else {
-      Serial.println("Static IP: ");
+      Serial.println("Ethernet Static IP: ");
       Serial.println(ETH.localIP());
       DeviceIPNumber = ETH.localIP().toString();
     }
@@ -123,88 +280,90 @@ void configureWifiEtherNetServer() {
     isNetworkConnected = true;
 
     WiFi.onEvent(onEthEvent);
-    // if (ETH.linkUp()) {
-    //   configTime(0, 0, "pool.ntp.org");
-    //   delay(2000);  // Wait for NTP sync
-
-    //   // // Get today's date
-    //   todayDate = getCurrentDate();
-    //   Serial.println("Today's Date: " + todayDate);
-    // }
+    
   } else {
 
-    connectWifiInernet();
+    connectWifiInternet();
     WiFi.onEvent(onWiFiEvent);
     isNetworkConnected = true;
   }
-}
-void connectWifiInernet() {
+} */
+void connectWifiInternet() {
+  String ssid = config["wifi_ssid"] | "";
+  String pass = config["wifi_password"] | "";
+  String ipStr = config["wifi_ip"] | "";
+  String primaryDnsStr = config["primary_dns"] | "8.8.8.8";
+  String secondaryDnsStr = config["secondary_dns"] | "8.8.4.4";
 
+  if (ssid.isEmpty()) {
+    Serial.println("[WiFi] Missing SSID in config!");
+    return;
+  }
 
-  String wifissid = config["wifi_ssid"].as<String>();
-  String wifipassword = config["wifi_password"].as<String>();
+  WiFi.mode(WIFI_STA);
+  WiFi.persistent(false);
+  WiFi.setAutoReconnect(true);
+  WiFi.disconnect(true, true);
+  delay(200);
 
-  // Step 1: Connect with DHCP to fetch gateway & subnet
-  Serial.println("Connecting with DHCP to get gateway...");
-  WiFi.begin(wifissid, wifipassword);
-
+  Serial.printf("[WiFi] Connecting to '%s' (DHCP)...\n", ssid.c_str());
+  WiFi.begin(ssid.c_str(), pass.c_str());
   if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    Serial.println("Initial WiFi connection failed");
+    Serial.println("[WiFi] DHCP connect failed");
     return;
   }
 
-  IPAddress gateway = WiFi.gatewayIP();
-  IPAddress subnet = WiFi.subnetMask();
+  IPAddress dhcpIP = WiFi.localIP();
+  IPAddress dhcpGateway = WiFi.gatewayIP();
+  IPAddress dhcpSubnet = WiFi.subnetMask();
 
-  Serial.print("Detected Gateway: ");
-  Serial.println(gateway);
-  Serial.print("Detected Subnet : ");
-  Serial.println(subnet);
+  Serial.print("[WiFi] DHCP IP: ");
+  Serial.println(dhcpIP);
+  Serial.print("[WiFi] Gateway: ");
+  Serial.println(dhcpGateway);
+  Serial.print("[WiFi] Subnet : ");
+  Serial.println(dhcpSubnet);
 
-  // Step 2: Prepare static IP settings from config
-  IPAddress staticIP, primaryDNS, secondaryDNS;
+  // ---- If wifi_ip is empty, generate static IP = 192.168.X.200 ----
+  IPAddress staticIP;
+  bool customStatic = staticIP.fromString(ipStr);
 
-  if (!staticIP.fromString(config["wifi_ip"].as<String>())) {
-    Serial.println("Invalid static IP in config");
-    return;
+  if (!customStatic || ipStr == "0.0.0.0" || ipStr == "undefined" || ipStr == "null") {
+    // derive from gateway or DHCP IP
+    uint8_t X = dhcpIP[2];
+    staticIP = IPAddress(192, 168, X, 200);
+    Serial.print("[WiFi] Auto-generated static IP: ");
+    Serial.println(staticIP);
   }
 
-  if (!primaryDNS.fromString(config["primary_dns"] | "8.8.8.8")) {
-    primaryDNS = IPAddress(8, 8, 8, 8);
-  }
+  IPAddress dns1, dns2;
+  if (!dns1.fromString(primaryDnsStr)) dns1 = IPAddress(8, 8, 8, 8);
+  if (!dns2.fromString(secondaryDnsStr)) dns2 = IPAddress(8, 8, 4, 4);
 
-  if (!secondaryDNS.fromString(config["secondary_dns"] | "8.8.4.4")) {
-    secondaryDNS = IPAddress(8, 8, 4, 4);
-  }
-
-  // Step 3: Disconnect, apply static IP config, and reconnect
-  Serial.println("Reconnecting with static IP...");
+  // ---- Reconnect with Static IP ----
+  Serial.println("[WiFi] Reconnecting with static IP...");
   WiFi.disconnect(true);
   delay(500);
 
-  bool success = WiFi.config(staticIP, gateway, subnet, primaryDNS, secondaryDNS);
-  if (!success) {
-    Serial.println("Failed to set static IP config!");
+  if (!WiFi.config(staticIP, dhcpGateway, dhcpSubnet, dns1, dns2)) {
+    Serial.println("[WiFi] Failed to apply static IP config!");
     return;
   }
 
-  WiFi.begin(wifissid, wifipassword);
-
+  WiFi.begin(ssid.c_str(), pass.c_str());
   if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    Serial.println("WiFi reconnection with static IP failed");
+    Serial.println("[WiFi] Static IP reconnect failed");
     return;
   }
-  DeviceIPNumber = WiFi.localIP().toString();
 
-  // Done!
-  Serial.println("WiFi Connected with Static IP:");
-  Serial.print("IP Address : ");
-  Serial.println(WiFi.localIP());
-  Serial.print("Gateway    : ");
-  Serial.println(WiFi.gatewayIP());
-  Serial.print("Subnet     : ");
-  Serial.println(WiFi.subnetMask());
+  DeviceIPNumber = WiFi.localIP().toString();
+  updateJsonConfig("config.json", "wifi_ip",DeviceIPNumber.c_str());
+  Serial.println("[WiFi] Connected successfully with Static IP");
+  Serial.print("IP Address : "); Serial.println(WiFi.localIP());
+  Serial.print("Gateway    : "); Serial.println(WiFi.gatewayIP());
+  Serial.print("Subnet     : "); Serial.println(WiFi.subnetMask());
 }
+
 
 
 
@@ -230,6 +389,7 @@ void onEthEvent(WiFiEvent_t event) {
     case ARDUINO_EVENT_ETH_GOT_IP:
       Serial.print("🌐 Ethernet IP: ");
       Serial.println(ETH.localIP());
+      DeviceIPNumber = ETH.localIP().toString();
       delay(5000);
       mqttsetup();
       isNetworkConnected = true;
@@ -357,7 +517,7 @@ void checkInternetConnection() {
     updateJsonConfig("config.json", "relay5", "true");
 
 
-     
+
 
   } else {
     // if (hasInternet)
@@ -366,7 +526,6 @@ void checkInternetConnection() {
     pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
     updateJsonConfig("config.json", "internet", "offline");
     updateJsonConfig("config.json", "relay5", "false");
-
   }
 }
 

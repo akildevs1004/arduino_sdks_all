@@ -27,7 +27,7 @@ const int LED_PIN = 8;
 const unsigned long FAST_BLINK = 300;   // No Wi-Fi
 const unsigned long SLOW_BLINK = 1000;  // Wi-Fi OK, No Internet
 
-String serialNumber = "ESP32T001";  // Default Serial Number
+String serialNumber = "HOTELSWITCH";  // Default Serial Number
 
 String device_serial_number = "";
 
@@ -53,7 +53,7 @@ IPAddress subnet(255, 255, 255, 0);
 String deviceIPaddress = "";
 
 int intervalHeartbeat = 60;  // Interval at which to send heartbeat (10 seconds)
- 
+
 
 
 // Function declarations
@@ -67,6 +67,10 @@ void wifiManagerSetup();
 void listLittleFSFiles();
 void handleConfigJson();
 void connectToWiFi();
+void connectToWiFi2(bool status);
+void connectToWiFiSetup(bool status);
+
+
 void setStaticIP();
 void safeRestart();
 bool socketConnectServer();
@@ -116,9 +120,19 @@ void setup() {
     wifiManager.resetSettings();
   }
 
-  connectToWiFi();
+  connectToWiFiSetup();
   WiFi.onEvent(onWiFiEvent);
-  Serial.println("Web server started at: --------------------" + WiFi.localIP().toString());
+  Serial.println("");
+  Serial.println("");
+  Serial.println("");
+  Serial.println("");
+  Serial.println("✅Device IP Address: ---------------------------------------------------" + WiFi.localIP().toString());
+  Serial.println("");
+  Serial.println("");
+  Serial.println("");
+  Serial.println("");
+  Serial.println("");
+
   String ipStr = WiFi.localIP().toString();
 
   updateJsonConfig("config.json", "ipAddress", ipStr.c_str());
@@ -131,8 +145,8 @@ void setup() {
   server.begin();
   logmessage("Web server started at: " + WiFi.localIP().toString());
 
-   
-    
+
+
   if (testInternet()) {
 
     mqttsetup();
@@ -143,7 +157,7 @@ void setup() {
     Serial.println("XXXXXXXXXXXXXXXXXXXXXXXX No Internet Connection XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
   }
   updateFirmWaresetup();
- uploadHTMLsetup();
+  uploadHTMLsetup();
 
   Serial.print("Version--------------------------------------------------------------------------");
   Serial.println(firmWareVersion);
@@ -169,15 +183,20 @@ void handleSwitchState() {
     previousSwitchState = switchState;
   }
 }
-
-
-
+void connectToWiFiSetup() {
+  connectToWiFi2(true);
+}
 void connectToWiFi() {
+
+  connectToWiFi2(false);
+}
+
+void connectToWiFi2(bool issetup) {
   Serial.println("Connecting to WiFi... Initiated " + wifiSSID + " " + wifiPassword);
 
   if (!wifiSSID.isEmpty() && !wifiPassword.isEmpty()) {
 
-     
+
     WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
     int retryCount = 0;
 
@@ -190,14 +209,14 @@ void connectToWiFi() {
     if (WiFi.status() == WL_CONNECTED) {
       Serial.println("Connected to WiFi!");
 
-isNetworkConnected=true;
+      isNetworkConnected = true;
 
       updateJsonConfig("config.json", "wifiConnection", "Connected");
 
       // setStaticIP();
 
     } else if (wifiPassword.isEmpty()) {
-
+      /*
 
       Serial.println("Failed to connect. Starting WiFiManager...");
 
@@ -206,19 +225,30 @@ isNetworkConnected=true;
       Serial.println("\n❌ Failed to connect, starting AP mode...");
 
       WiFi.mode(WIFI_AP);
-      if (WiFi.softAP(wifiSSID.c_str())) {
+      if (WiFi.softAP(serialNumber.c_str())) {
         Serial.println("✅ AP started! 111111111111111111111111111111111111111111111");
         Serial.print("AP SSID: ");
-        Serial.println(wifiSSID.c_str());
+        Serial.println(serialNumber.c_str());
         Serial.print("AP IP Address: ");
         Serial.println(WiFi.softAPIP());
       } else {
         Serial.println("❌ Failed to start AP!");
-      } 
+      }
 
       wifiManagerSetup();
+
+      */
+      Serial.println("❌ AP started ERROR ! 111111111111111111111111111111111111111111111");
     }
-  } else {
+  }
+
+  if (wifiPassword.isEmpty() && issetup) {
+
+    WiFi.persistent(true);
+    // Disconnect from any STA (client) connection
+    WiFi.disconnect(true, true);  // true,true → erase old config too
+
+
     Serial.println("EMPTY Password");
 
     Serial.println("Failed to connect. Starting WiFiManager...");
@@ -228,10 +258,10 @@ isNetworkConnected=true;
     Serial.println("\n❌ Failed to connect, starting AP mode...");
 
     WiFi.mode(WIFI_AP);
-    if (WiFi.softAP(wifiSSID.c_str())) {
+    if (WiFi.softAP(serialNumber.c_str())) {
       Serial.println("✅ AP started! with Empty Password ");
       Serial.print("AP SSID: ");
-      Serial.println(wifiSSID.c_str());
+      Serial.println(serialNumber.c_str());
       Serial.print("AP IP Address: ");
       Serial.println(WiFi.softAPIP());
     } else {
@@ -286,7 +316,6 @@ void setStaticIP() {
   } else {
     Serial.println("❌ Failed to apply config IP → keeping DHCP IP.");
   }
- 
 }
 
 void wifiManagerSetup() {
@@ -314,7 +343,7 @@ void sendSwitchStatus(int status) {
     return;
   }
   DynamicJsonDocument doc(512);
- 
+
   doc["room_number"] = serialNumber;
   doc["status"] = status;                                   // avoid duplicating semantics unless
   doc["ipAddress"] = jsonConfig["ipAddress"].as<String>();  // avoid duplicating semantics unless
@@ -324,9 +353,9 @@ void sendSwitchStatus(int status) {
   String body;
   serializeJson(doc, body);
 
-  if (WiFi.status() == WL_CONNECTED) { 
+  if (WiFi.status() == WL_CONNECTED) {
 
-    mqttPublishMessage(body); 
+    mqttPublishMessage(body);
     HTTPClient http;
     http.begin(serverURL);   // for HTTPS: use WiFiClientSecure and set cert/INSECURE
     http.setTimeout(10000);  // 10s timeout
@@ -349,13 +378,11 @@ void sendSwitchStatus(int status) {
   } else {
     Serial.println("WiFi not connected");
   }
- 
 }
- 
+
 void logmessage(String message) {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("WiFi not connected. Cannot send switch status.");
     return;
   }
- 
 }

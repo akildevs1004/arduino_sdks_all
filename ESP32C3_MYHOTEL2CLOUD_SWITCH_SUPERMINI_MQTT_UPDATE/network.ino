@@ -52,7 +52,7 @@ static inline void handleLedIndicatorLoop() {
   } else if (!hasInternet) {
     // Wi-Fi up, no Internet → slow blink
     blinkLight(SLOW_BLINK);
-    Serial.println("----------------NO INTERNET----------------------------");
+    Serial.println("----------------   INTERNET NOT AVAILABLE----------------------------");
 
   } else {
     // All good → LED ON (change to HIGH if you want solid ON)
@@ -62,7 +62,7 @@ static inline void handleLedIndicatorLoop() {
     digitalWrite(LED_PIN, LOW);  //ON
 
 
-    Serial.println("----------------YES INTERNET----------------------------");
+    Serial.println("----------------  INTERNET   OK----------------------------");
   }
 }
 
@@ -102,7 +102,7 @@ void checkNetworkResetButton() {
   int buttonState = digitalRead(BUTTON_PIN);
 
   if (buttonState == LOW)
-    Serial.println("checkNetworkResetButton pressed Yes ");
+    Serial.println("RESET BUTTON Pressed Yes ");
   // else
   //   Serial.println("checkNetworkResetButton pressed No");
 
@@ -218,8 +218,8 @@ bool testInternet() {
   http.end();
 
   bool httpOK = (code == 204);
-  Serial.printf("%s HTTP 204 check [%s] -> code: %d\n",
-                httpOK ? "✅" : "❌", probe, code);
+ // Serial.printf("%s HTTP 204 check [%s] -> code: %d\n",
+                //httpOK ? "✅" : "❌", probe, code);
 
 
   hasInternet = httpOK;

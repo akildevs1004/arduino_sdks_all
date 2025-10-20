@@ -109,10 +109,10 @@ void publishConfigToMQTT() {
 #endif
   } else {
     Serial.println("❌ MQTT publish failed");
-    Serial.println("Possible reasons:");
-    Serial.println("- MQTT not connected");
-    Serial.println("- Payload too large (" + String(payload.length()) + " bytes)");
-    Serial.println("- Network issues");
+    // Serial.println("Possible reasons:");
+    // Serial.println("- MQTT not connected");
+    // Serial.println("- Payload too large (" + String(payload.length()) + " bytes)");
+    // Serial.println("- Network issues");
   }
 }
 void updateConfigThrougMqtt(String message) {

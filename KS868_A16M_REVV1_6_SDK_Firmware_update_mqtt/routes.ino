@@ -19,7 +19,7 @@ void routes() {
   server.on("/scriptcommunication.js", HTTP_GET, handlescriptcommunicationJS);
 
 
-  
+
 
 
   server.on("/status", HTTP_GET, handleStatus);
@@ -293,12 +293,12 @@ void handleSubmitCommunication() {
   server.send(302);
   Serial.println("Data saved successfully");
   readConfig("config.json");
-
+GlobalWebsiteResponseMessage="";
   delay(1000);
   loadingConfigFile = false;
 
 
-handleRestartDevice();
+  handleRestartDevice();
   return;
 }
 // Handle Form 1 submission
@@ -323,17 +323,16 @@ void handleForm1Submit() {
   doc["eth_ip"] = server.arg("eth_ip");
   doc["eth_gateway"] = server.arg("eth_gateway");
   doc["eth_subnet"] = server.arg("eth_subnet");
-
   //doc["device_serial_number"] = device_serial_number;  //config["device_serial_number"].as<String>() ;//server.arg("device_serial_number");
 
-
+  doc["device_serial_number"] =  server.arg("device_serial_number");
   // doc["server_url"] = server.arg("server_url");
   doc["heartbeat"] = server.arg("heartbeat");
   doc["reset_settings_duration"] = server.arg("reset_settings_duration");
   doc["temperature_read_interval"] = server.arg("temperature_read_interval");
 
 
-  
+
   // doc["server_ip"] = server.arg("server_ip");
   // doc["server_port"] = server.arg("server_port");
 
@@ -360,7 +359,7 @@ void handleForm1Submit() {
   doc["max_siren_pause"] = server.arg("max_siren_pause");
 
 
-  
+
 
 
   doc["temp_checkbox"] = server.hasArg("temp_checkbox");
@@ -374,7 +373,7 @@ void handleForm1Submit() {
 
   doc["temperature_difference"] = server.arg("temperature_difference");
 
-doc["siren_checkbox"] = server.hasArg("siren_checkbox");
+  doc["siren_checkbox"] = server.hasArg("siren_checkbox");
 
 
   doc["humidity_checkbox"] = server.hasArg("humidity_checkbox");
@@ -416,14 +415,17 @@ doc["siren_checkbox"] = server.hasArg("siren_checkbox");
   // handleRestartDevice();
   Serial.println("Saved Config Data");
   Serial.println(output);
-  GlobalWebsiteResponseMessage = "Data saved successfully";
+  GlobalWebsiteResponseMessage = "Data saved successfully. Restart the device,  if IP is Updated/changed. ";
   server.sendHeader("Location", "/form1");
   server.send(302);
   Serial.println("Data saved successfully");
   readConfig("config.json");
-
+GlobalWebsiteResponseMessage="";
   delay(1000);
   loadingConfigFile = false;
+
+
+ // handleRestartDevice();
 
   return;
 }
@@ -438,11 +440,35 @@ void handleRestartDevice() {
   //   return;
   // }
 
-  server.send(200, "text/html",
-              "<html><body>"
+  // server.send(200, "text/html",
+  //             "<html><body>"
 
-              "<p>Device is restarting...Please wait...</p>"
-              "<meta http-equiv='refresh' content='5;url=/'></body></html>");
+  //             "<p>Device is restarting...Please wait...</p>"
+  //             "<meta http-equiv='refresh' content='5;url=/'></body></html>");
+
+
+String ipAddress = DeviceIPNumber;
+
+String html = "<html><head>"
+              "<meta charset='utf-8'>"
+              "<style>"
+              "body{font-family:sans-serif;text-align:center;margin-top:60px;}"
+              "a{display:inline-block;margin-top:20px;font-size:18px;"
+              "text-decoration:none;color:#007BFF;}"
+              "</style>"
+              "</head><body>"
+              "<h2>Device is restarting...</h2>"
+              "<p>Please wait a few seconds. You will be redirected automatically.</p>"
+              "<p>If not redirected, click below:</p>"
+              "<a href='http://" + ipAddress + "'>Go to Device Page IP: "+ipAddress+"</a>"
+              "<script>"
+              "setTimeout(function(){"
+              "location.href='http://" + ipAddress + "';"
+              "}, 5000);"  // redirect after 5 seconds
+              "</script>"
+              "</body></html>";
+
+server.send(200, "text/html", html);
 
   Serial.println("Reset requested - restarting device");
   delay(1000);    // Give time for response to be sent
