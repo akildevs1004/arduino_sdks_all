@@ -1,0 +1,98 @@
+<div class="container1">
+    <div class="tabcontent" id="tab2">
+        <div style="width:100%; background-color:transparent">
+            <form action="/submit_communication" class="form1" onsubmit="return verifyform()" method="POST"
+                style="background-color:transparent">
+
+                <table border="0" cellpadding="0" cellspacing="0">
+
+                    <!-- MQTT Row -->
+                    <tr>
+                        <td>
+                            <div class="card">
+                                <div class="card-title">
+                                    <span>MQTT</span>
+
+                                    <!-- keep your existing checkbox + onclick -->
+                                    <!-- <label for="mqtt_communication" style="cursor:pointer;display:inline-block;width:auto" title="MQTT">
+                    <input id="mqtt_communication" name="mqtt_communication" value="1" type="checkbox"
+                           onclick="toggleMQTT()">
+                  </label> -->
+                                </div>
+
+                                <!-- keep your existing id + default display:none (your JS will show/hide) -->
+                                <div id="mqtt_settings" style="display:none1; margin-top:10px;">
+                                    <table>
+                                        <tr>
+                                            <td><label>MQTT Server:</label></td>
+                                            <td><input id="mqtt_server" name="mqtt_server"></td>
+                                        </tr>
+
+                                        <tr>
+                                            <td><label>MQTT Port:</label></td>
+                                            <td><input id="mqtt_port" name="mqtt_port"></td>
+                                        </tr>
+
+                                        <tr>
+                                            <td><label>MQTT Clientid:</label></td>
+                                            <td><input id="mqtt_clientId" name="mqtt_clientId"></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td>
+                                                <div>
+                                                    <table style="width:200px">
+                                                        <tr>
+                                                            <td style="padding:0">
+                                                                <input value="Update Settings" type="submit">
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+
+
+
+                            </div>
+                        </td>
+                    </tr>
+
+
+                    <!-- Submit Row -->
+                    <!-- <tr>
+                        <td>
+                            <div class="card">
+                                <div style="margin-top:10px;">
+                                    <table style="width:200px">
+                                        <tr>
+                                            <td style="padding:0">
+                                                <input value="Update Settings" type="submit">
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </td>
+                    </tr> -->
+
+                </table>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", () => {
+        setTimeout(() => {
+            setActiveTab(document.getElementById("communicationtab"));
+        }, 1000);
+    });
+
+</script>
+
+<script src="/scriptcommunication.js"></script>

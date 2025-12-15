@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<link rel="stylesheet" href="/styles.css">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Device Settings</title>
+
+</head>
+
+<body>
+  <div class="header">
+
+    <a href="/form1"><img src="http://{ipAddress}/logo" alt="Logo"></a>
+
+
+    <textarea style="display:none" id="config_json">{config_json}</textarea>
+
+    <div>Internet:<span style="color:rgb(0, 0, 0)" id="internet">Offline</span></div>
+    <div>MQTT:<span style="color:rgb(0, 0, 0)" id="mqtt">Offline</span></div>
+
+    <div style="display: none;">Cloud:<span style="color:rgb(0, 0, 0)" id="cloud">Offline</span></div>
+
+
+
+    <div class="time">
+      <div id="time">Loading time...</div>
+    </div>
+
+    <div>Ver :<span style="color:#FFF">{firmWareVersion}</span> <span><a style=" color:#FFF;text-decoration:none"
+          href="/updatefirmware"> FirmWare</a></span></div>
+
+    <div><a style="color:red!important;text-decoration:none" href="/logout">Logout</a></div>
+  </div>
+
+  <div class=container1>
+    <div style=text-align:center;font-weight:700><span style=width:70%;text-align:center><span
+          style=color:green>{GlobalWebsiteResponseMessage}</span> <span
+          style=color:red>{GlobalWebsiteErrorMessage}</span></span></div>
+    <div>
+      <div id=divAccountExpired style=color:red;display:none;font-weight:700;font-size:20px>Your Account is expired on
+        {cloud_account_expire}. Alarm Events are Not working.</div>
+      <div style="display: flex;   margin-bottom: 1rem; font-family: Arial, sans-serif;">
+        <a id="form1tab" href="/form1" style="padding: 0.75rem 1.5rem; 
+              text-decoration: none; 
+              color: #FFF; 
+              font-weight: 500;
+              border-bottom: 3px solid transparent;
+              transition: all 0.2s ease;
+              margin-right: 0.25rem;" onmouseover="this.style.color='#FFF'; this.style.borderBottomColor='#ccc'"
+          onmouseout="this.style.color='#FFF'; this.style.borderBottomColor='transparent'"
+          onclick="setActiveTab(this)">Alarm Settings</a>
+
+        <!-- <a id="relaystab" href="/relays" style="padding: 0.75rem 1.5rem; 
+              text-decoration: none; 
+              color: #555; 
+              font-weight: 500;
+              border-bottom: 3px solid transparent;
+              transition: all 0.2s ease;
+              margin-right: 0.25rem;" onmouseover="this.style.color='#000'; this.style.borderBottomColor='#ccc'"
+          onmouseout="this.style.color='#555'; this.style.borderBottomColor='transparent'"
+          onclick="setActiveTab(this)">Relays</a> -->
+
+        <a id="communicationtab" href="/communication" style="padding: 0.75rem 1.5rem; 
+              text-decoration: none; 
+              color: #FFF; 
+              font-weight: 500;
+              border-bottom: 3px solid transparent;
+              transition: all 0.2s ease;" onmouseover="this.style.color='#FFF'; this.style.borderBottomColor='#ccc'"
+          onmouseout="this.style.color='#FFF'; this.style.borderBottomColor='transparent'"
+          onclick="setActiveTab(this)">Communication</a>
+
+        <a id="sostab" href="/DeviceSOSRooms" style="padding: 0.75rem 1.5rem; 
+              text-decoration: none; 
+              color: #FFF; 
+              font-weight: 500;
+              border-bottom: 3px solid transparent;
+              transition: all 0.2s ease;
+              margin-right: 0.25rem;" onmouseover="this.style.color='#FFF'; this.style.borderBottomColor='#ccc'"
+          onmouseout="this.style.color='#FFF'; this.style.borderBottomColor='transparent'"
+          onclick="setActiveTab(this)">SOS Devices</a>
+
+      </div>
+
+      <script>
+        function setActiveTab(element) {
+
+          // Remove active class from all tabs
+          const tabs = document.querySelectorAll('div a');
+          tabs.forEach(tab => {
+            tab.style.color = '#FFF';
+            tab.style.borderBottomColor = 'transparent';
+          });
+
+          // Add active class to clicked tab
+          element.style.color = '#0066cc';
+          element.style.borderBottomColor = '#0066cc';
+        }
+      </script>
+
+    </div>
+  </div>
+
+  <script>
+    var ipAddress = "{ipAddress}";
+  </script>
+
+  <script src="header.js"></script>

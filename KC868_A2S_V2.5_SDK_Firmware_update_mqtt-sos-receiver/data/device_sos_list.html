@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SOS Devices</title>
+    <style>
+        :root {
+            --bg: #0b1020;
+            --card: rgba(255, 255, 255, .06);
+            --card2: rgba(255, 255, 255, .10);
+            --text: rgba(255, 255, 255, .92);
+            --muted: rgba(255, 255, 255, .62);
+            --line: #FFF;
+            --shadow: 0 18px 45px rgba(0, 0, 0, .35);
+            --radius: 14px;
+            --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #f6f7fb;
+                --card: rgba(0, 0, 0, .04);
+                --card2: rgba(0, 0, 0, .06);
+                --text: rgba(0, 0, 0, .88);
+                --muted: rgba(0, 0, 0, .60);
+                --line: #FFF;
+                --shadow: 0 18px 45px rgba(0, 0, 0, .10);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            background:
+                radial-gradient(1200px 800px at 20% 10%, rgba(99, 102, 241, .18), transparent 55%),
+                radial-gradient(900px 700px at 80% 25%, rgba(34, 197, 94, .14), transparent 55%),
+                radial-gradient(900px 700px at 40% 95%, rgba(245, 158, 11, .10), transparent 55%),
+                var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            backdrop-filter: blur(12px);
+            background: linear-gradient(to bottom, rgba(0, 0, 0, .25), rgba(0, 0, 0, 0));
+            border-bottom: 1px solid var(--line);
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        .topbar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .title h1 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .title .sub {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: var(--card);
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, .95);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, .15);
+        }
+
+        .dot.ok {
+            background: rgba(34, 197, 94, .95);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, .18);
+        }
+
+        .dot.bad {
+            background: rgba(239, 68, 68, .95);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, .15);
+        }
+
+        button {
+            border: 1px solid var(--line);
+            background: var(--card);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: .15s ease;
+        }
+
+        button:hover {
+            background: var(--card2);
+        }
+
+        button.primary {
+            border-color: rgba(99, 102, 241, .45);
+            background: rgba(99, 102, 241, .18);
+        }
+
+        button.danger {
+            border-color: rgba(239, 68, 68, .45);
+            background: rgba(239, 68, 68, .12);
+        }
+
+        button.small {
+            padding: 7px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        button:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.35fr .65fr;
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        @media (max-width:980px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            border: 1px solid var(--line);
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .cardHead {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .cardHead h2 {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .mono {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--line);
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        .table th {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, .06);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .miniDot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, .95);
+        }
+
+        .chip.on .miniDot {
+            background: rgba(239, 68, 68, .95);
+        }
+
+        .chip.off .miniDot {
+            background: rgba(34, 197, 94, .95);
+        }
+
+        .log {
+            max-height: 420px;
+            overflow: auto;
+            padding: 10px 12px;
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--muted);
+            white-space: pre-wrap;
+            line-height: 1.35;
+        }
+
+        /* Modal */
+        .modalBack {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .58);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            padding: 18px;
+        }
+
+        .modal {
+            width: min(820px, 100%);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            box-shadow: 0 28px 75px rgba(0, 0, 0, .5);
+            overflow: hidden;
+            background: color-mix(in oklab, var(--bg) 78%, black 22%);
+        }
+
+        .modalHeader {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--line);
+            gap: 12px;
+        }
+
+        .modalHeader strong {
+            font-size: 14px;
+        }
+
+        .modalHeader .sub {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.4;
+            margin-top: 4px;
+        }
+
+        .modalBody {
+            padding: 14px 16px 16px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 160px 1fr;
+            gap: 10px;
+            align-items: center;
+        }
+
+        @media (max-width:700px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        label {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, .05);
+            color: var(--text);
+            outline: none;
+        }
+
+        .panel {
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, .04);
+            padding: 12px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .panelTop {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .panelTop .msg b {
+            font-size: 13px;
+        }
+
+        .panelTop .msg div {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 3px;
+            line-height: 1.35;
+        }
+
+        .captureBox {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, .04);
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .codeView {
+            font-family: var(--mono);
+            font-size: 13px;
+            color: var(--text);
+            padding: 8px 10px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, .05);
+            min-width: 260px;
+        }
+
+        .modalFooter {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-top: 1px solid var(--line);
+            background: rgba(255, 255, 255, .02);
+            flex-wrap: wrap;
+        }
+
+        .toast {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            z-index: 20;
+            border: 1px solid var(--line);
+            background: var(--card);
+            border-radius: 14px;
+            padding: 12px 14px;
+            box-shadow: var(--shadow);
+            display: none;
+            width: min(420px, calc(100% - 32px));
+        }
+
+        .toast strong {
+            font-size: 13px;
+        }
+
+        .toast .msg {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="wrap">
+            <div class="topbar">
+                <div class="title">
+                    <h1>SOS Devices</h1>
+                    <div class="sub">
+                        Popup flow: click <b>Capture SOS ON</b> (store ON) → then <b>Capture SOS OFF</b> (store OFF) →
+                        close popup.
+                        Adds new or updates existing device.
+                    </div>
+                </div>
+                <div class="actions">
+                    <span class="pill"><span id="connDot" class="dot"></span><span id="connText">Checking…</span></span>
+                    <button id="btnReload" class="primary">Reload</button>
+                    <button id="btnOpen" class="primary">Add / Update SOS Device</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="wrap">
+        <div class="grid">
+            <section class="card">
+                <div class="cardHead">
+                    <div>
+                        <h2>Registered SOS Devices</h2>
+                        <div class="hint">Stored values: <span class="mono">onCode / offCode</span> and <span
+                                class="mono">status</span> (optional).</div>
+                    </div>
+                    <div class="hint"><span id="count">0</span> devices</div>
+                </div>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width:55px;">ID</th>
+                            <th>Name</th>
+                            <th style="width:70px;">Room</th>
+                            <th style="width:220px;">ON Code</th>
+                            <th style="width:220px;">OFF Code</th>
+                            <th style="width:110px;">Status</th>
+                            <th style="width:120px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody">
+                        <tr>
+                            <td colspan="7" class="hint">Loading…</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <aside class="card">
+                <div class="cardHead">
+                    <div>
+                        <h2>Activity</h2>
+                        <div class="hint">UI log</div>
+                    </div>
+                    <button id="btnClearLog">Clear</button>
+                </div>
+                <div id="log" class="log">—</div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="modalBack" class="modalBack">
+        <div class="modal" role="dialog" aria-modal="true">
+            <div class="modalHeader">
+                <div>
+                    <strong>Add / Update SOS Device</strong>
+                    <div class="sub">
+                        Receiver is always listening. Click the button, then press the remote button once.
+                        The device will capture the next RF code and save immediately.
+                    </div>
+                </div>
+                <button id="btnClose" class="small">Close</button>
+            </div>
+
+            <div class="modalBody">
+                <div class="row">
+                    <label>Mode</label>
+                    <select id="mode">
+                        <option value="new">Add New Device</option>
+                        <option value="existing">Update Existing Device</option>
+                    </select>
+                </div>
+
+                <div class="row" id="rowExisting" style="display:none;">
+                    <label>Select Device</label>
+                    <select id="existingSelect"></select>
+                </div>
+
+                <div class="row">
+                    <label>Device Name</label>
+                    <input id="name" placeholder="e.g., Room 1 SOS" />
+                </div>
+
+                <div class="row">
+                    <label>Room ID</label>
+                    <input id="roomId" type="number" min="0" placeholder="1" />
+                </div>
+
+                <div class="row">
+                    <label>Capture timeout (sec)</label>
+                    <input id="timeoutSec" type="number" min="3" max="60" value="15" />
+                </div>
+
+                <div class="panel">
+                    <div class="panelTop">
+                        <div class="msg">
+                            <b id="stepTitle">Step 1: Capture SOS ON</b>
+                            <div id="stepHint">Click “Capture SOS ON”, then ask the user to press the remote’s ON button
+                                once.</div>
+                        </div>
+                        <div class="pill">
+                            <span class="dot" id="stepDot"></span>
+                            <span id="stepState">Ready</span>
+                        </div>
+                    </div>
+
+                    <!-- ON capture -->
+                    <div class="captureBox" id="onBox">
+                        <div>
+                            <div class="hint">SOS ON (id1)</div>
+                            <div class="codeView" id="onCodeView">—</div>
+                            <div class="mono" id="onMeta">bits: — | proto: —</div>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <button id="btnCaptureOn" class="primary">Capture SOS ON</button>
+                        </div>
+                    </div>
+
+                    <!-- OFF capture (hidden until ON saved) -->
+                    <div class="captureBox" id="offBox" style="display:none;">
+                        <div>
+                            <div class="hint">SOS OFF (id2)</div>
+                            <div class="codeView" id="offCodeView">—</div>
+                            <div class="mono" id="offMeta">bits: — | proto: —</div>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <button id="btnCaptureOff" class="primary">Capture SOS OFF</button>
+                        </div>
+                    </div>
+
+                    <div class="hint" id="finalHint">
+                        After OFF is captured and saved, this popup will close automatically.
+                    </div>
+                </div>
+            </div>
+
+            <div class="modalFooter">
+                <div class="hint" id="footerHint">Waiting to capture SOS ON.</div>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <button id="btnReset" class="small">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">
+        <strong id="toastTitle">Info</strong>
+        <div id="toastMsg" class="msg"></div>
+    </div>
+
+    <script>
+        // ===== Required APIs =====
+        // Existing:
+        //  - GET  /api/sos/devices
+        //  - POST /api/sos/learn               (returns {code,bits,proto,pulse})
+        //  - DELETE /api/sos/devices/delete?id=1
+        //
+        // New (needed for add/update with partial fields):
+        //  - POST /api/sos/devices/upsert      (creates or updates and saves config.json)
+        const API = {
+            LIST: "/api/sos/devices",
+            LEARN: "/api/sos/learn",
+            UPSERT: "/api/sos/devices/upsert",
+            DEL: "/api/sos/devices/delete"
+        };
+
+        const $ = (id) => document.getElementById(id);
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+        }
+        function logLine(line) {
+            const el = $("log");
+            const now = new Date().toLocaleString();
+            if (el.textContent.trim() === "—") el.textContent = "";
+            el.textContent += `[${now}] ${line}\n`;
+            el.scrollTop = el.scrollHeight;
+        }
+        function toast(title, msg, ms = 2800) {
+            $("toastTitle").textContent = title;
+            $("toastMsg").textContent = msg;
+            const t = $("toast");
+            t.style.display = "block";
+            clearTimeout(toast._t);
+            toast._t = setTimeout(() => t.style.display = "none", ms);
+        }
+        function setConn(state, msg) {
+            const dot = $("connDot"), txt = $("connText");
+            txt.textContent = msg;
+            dot.classList.remove("ok", "bad");
+            if (state === "ok") dot.classList.add("ok");
+            if (state === "bad") dot.classList.add("bad");
+        }
+
+        async function apiGet(url) {
+            const r = await fetch(url, { cache: "no-store" });
+            if (!r.ok) throw new Error(`GET ${url} failed (${r.status})`);
+            return r.json();
+        }
+        async function apiPost(url, body) {
+            const r = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body || {})
+            });
+            if (!r.ok) {
+                const t = await r.text().catch(() => "");
+                throw new Error(`POST ${url} failed (${r.status}) ${t}`);
+            }
+            return r.json().catch(() => ({}));
+        }
+        async function apiDelete(url) {
+            const r = await fetch(url, { method: "DELETE" });
+            if (!r.ok) {
+                const t = await r.text().catch(() => "");
+                throw new Error(`DELETE failed (${r.status}) ${t}`);
+            }
+            return r.json().catch(() => ({}));
+        }
+
+        // ===== List/Table =====
+        let devices = [];
+
+        function statusChip(status) {
+            const s = String(status || "").toUpperCase();
+            if (s === "ON") return `<span class="chip on"><span class="miniDot"></span>ON</span>`;
+            if (s === "OFF") return `<span class="chip off"><span class="miniDot"></span>OFF</span>`;
+            return `<span class="chip"><span class="miniDot"></span>—</span>`;
+        }
+
+        function render() {
+            $("count").textContent = String(devices.length);
+            const tb = $("tbody");
+
+            if (!devices.length) {
+                tb.innerHTML = `<tr><td colspan="7" class="hint">No SOS devices registered.</td></tr>`;
+                return;
+            }
+
+            tb.innerHTML = devices.map(d => `
+      <tr>
+        <td><b>${escapeHtml(d.id ?? "")}</b></td>
+        <td>${escapeHtml(d.name ?? "")}</td>
+        <td>${escapeHtml(d.roomId ?? "")}</td>
+        <td><span class="mono">${escapeHtml(d.onCode ?? "")}</span></td>
+        <td><span class="mono">${escapeHtml(d.offCode ?? "")}</span></td>
+        <td>${statusChip(d.status)}</td>
+        <td>
+          <button class="small danger" onclick="deleteDevice(${Number(d.id)})">Delete</button>
+        </td>
+      </tr>
+    `).join("");
+        }
+
+        async function loadDevices() {
+            try {
+                const data = await apiGet(API.LIST);
+                devices = Array.isArray(data) ? data : (data.devices || []);
+                setConn("ok", "Connected");
+                render();
+                fillExistingSelect();
+                logLine(`Loaded ${devices.length} devices`);
+            } catch (e) {
+                setConn("bad", "Disconnected");
+                devices = [];
+                render();
+                toast("Load failed", e.message, 4500);
+                logLine(`ERROR: ${e.message}`);
+            }
+        }
+
+        async function deleteDevice(id) {
+            if (!Number.isFinite(id) || id <= 0) return;
+            if (!confirm(`Delete device id ${id}?`)) return;
+
+            try {
+                await apiDelete(`${API.DEL}?id=${encodeURIComponent(String(id))}`);
+                toast("Deleted", `Device ${id} removed.`);
+                logLine(`Deleted device id=${id}`);
+                await loadDevices();
+            } catch (e) {
+                toast("Delete failed", e.message, 4500);
+                logLine(`ERROR: ${e.message}`);
+            }
+        }
+        window.deleteDevice = deleteDevice;
+
+        // ===== Modal flow state =====
+        let currentId = 0;       // device id after upsert
+        let onCaptured = false;
+        let busy = false;
+
+        function fillExistingSelect() {
+            const sel = $("existingSelect");
+            sel.innerHTML = devices.map(d => {
+                const label = `#${d.id} - ${d.name || "SOS"} (Room ${d.roomId || 0})`;
+                return `<option value="${d.id}">${escapeHtml(label)}</option>`;
+            }).join("");
+        }
+
+        function setModeUI() {
+            const mode = $("mode").value;
+            $("rowExisting").style.display = (mode === "existing") ? "" : "none";
+
+            if (mode === "existing" && devices.length) {
+                $("existingSelect").value = String(devices[0].id);
+                loadExistingToForm();
+            } else {
+                // new device
+                currentId = 0;
+                $("name").value = "";
+                $("roomId").value = "";
+            }
+        }
+
+        function loadExistingToForm() {
+            const id = Number($("existingSelect").value || 0);
+            const d = devices.find(x => Number(x.id) === id);
+            if (!d) return;
+
+            currentId = id;
+            $("name").value = d.name || "";
+            $("roomId").value = d.roomId || 0;
+
+            // show current codes (for clarity)
+            $("onCodeView").textContent = d.onCode ? d.onCode : "—";
+            $("offCodeView").textContent = d.offCode ? d.offCode : "—";
+            $("onMeta").textContent = `bits: ${d.onBits ?? "—"} | proto: ${d.onProto ?? "—"}`;
+            $("offMeta").textContent = `bits: ${d.offBits ?? "—"} | proto: ${d.offProto ?? "—"}`;
+
+            // reset capture sequence to ON first (as requested)
+            onCaptured = false;
+            $("offBox").style.display = "none";
+            $("onBox").style.display = "";
+            $("stepTitle").textContent = "Step 1: Capture SOS ON";
+            $("stepHint").textContent = "Click “Capture SOS ON”, then ask the user to press the remote’s ON button once.";
+            $("footerHint").textContent = "Waiting to capture SOS ON.";
+        }
+
+        function setBusy(state, msg) {
+            busy = state;
+            $("btnCaptureOn").disabled = state;
+            $("btnCaptureOff").disabled = state;
+            $("btnReset").disabled = state;
+            $("btnClose").disabled = state;
+
+            $("stepDot").classList.remove("ok", "bad");
+            $("stepState").textContent = msg || (state ? "Working…" : "Ready");
+        }
+
+        function resetWizard() {
+            currentId = ($("mode").value === "existing") ? Number($("existingSelect").value || 0) : 0;
+            onCaptured = false;
+
+            $("onCodeView").textContent = "—";
+            $("offCodeView").textContent = "—";
+            $("onMeta").textContent = "bits: — | proto: —";
+            $("offMeta").textContent = "bits: — | proto: —";
+
+            $("offBox").style.display = "none";
+            $("onBox").style.display = "";
+            $("stepTitle").textContent = "Step 1: Capture SOS ON";
+            $("stepHint").textContent = "Click “Capture SOS ON”, then ask the user to press the remote’s ON button once.";
+            $("footerHint").textContent = "Waiting to capture SOS ON.";
+            setBusy(false, "Ready");
+        }
+
+        // Core: capture next RF code (via /api/sos/learn), then upsert immediately to config
+        async function captureAndStore(slot) { // slot: "on" or "off"
+            if (busy) return;
+
+            const name = $("name").value.trim();
+            const roomId = Number($("roomId").value) || 0;
+            const timeoutSec = Math.max(3, Math.min(60, Number($("timeoutSec").value) || 15));
+
+            if (!name && $("mode").value === "new") {
+                toast("Missing", "Please enter Device Name for new device.", 3500);
+                return;
+            }
+
+            // For new: we can still create with name/roomId, then store codes
+            const stepLabel = (slot === "on") ? "SOS ON" : "SOS OFF";
+            setBusy(true, `Capturing ${stepLabel}…`);
+            $("stepDot").classList.remove("ok", "bad");
+            $("stepDot").classList.add(""); // neutral
+
+            $("footerHint").textContent = `Now ask the user to press ${stepLabel} button once…`;
+
+            try {
+                logLine(`Capture ${slot.toUpperCase()} start (timeout=${timeoutSec}s)`);
+                const learned = await apiPost(API.LEARN, { timeoutSec }); // expects {code,bits,proto}
+                const code = String(learned.code ?? "").trim();
+                if (!code) throw new Error("Learn returned empty code.");
+
+                // Build upsert payload with only the slot fields + meta
+                const payload = {
+                    id: currentId || 0,
+                    name: name,
+                    roomId: roomId
+                };
+
+                if (slot === "on") {
+                    payload.onCode = code;
+                    payload.onBits = Number(learned.bits) || 0;
+                    payload.onProto = Number(learned.proto) || 0;
+                } else {
+                    payload.offCode = code;
+                    payload.offBits = Number(learned.bits) || 0;
+                    payload.offProto = Number(learned.proto) || 0;
+                }
+
+                // Upsert saves config.json
+                const saved = await apiPost(API.UPSERT, payload);
+
+                // Expect response: { ok:true, device:{ id,... } } (recommended)
+                const dev = saved.device || {};
+                currentId = Number(dev.id || currentId || 0);
+
+                // Update UI
+                if (slot === "on") {
+                    $("onCodeView").textContent = code;
+                    $("onMeta").textContent = `bits: ${payload.onBits} | proto: ${payload.onProto}`;
+                    onCaptured = true;
+
+                    $("stepDot").classList.add("ok");
+                    $("stepState").textContent = "SOS ON saved";
+                    toast("Saved", `SOS ON stored (id=${currentId})`, 2200);
+                    logLine(`Saved ON code=${code} for id=${currentId}`);
+
+                    // Show OFF step next
+                    $("onBox").style.display = "none";
+                    $("offBox").style.display = "";
+                    $("stepTitle").textContent = "Step 2: Capture SOS OFF";
+                    $("stepHint").textContent = "Click “Capture SOS OFF”, then ask the user to press the remote’s OFF button once.";
+                    $("footerHint").textContent = "Waiting to capture SOS OFF.";
+
+                } else {
+                    $("offCodeView").textContent = code;
+                    $("offMeta").textContent = `bits: ${payload.offBits} | proto: ${payload.offProto}`;
+
+                    $("stepDot").classList.add("ok");
+                    $("stepState").textContent = "SOS OFF saved";
+                    toast("Saved", `SOS OFF stored (id=${currentId}). Closing…`, 2200);
+                    logLine(`Saved OFF code=${code} for id=${currentId}`);
+
+                    // Close popup after OFF saved
+                    await loadDevices();
+                    closeModal();
+                    return;
+                }
+
+                await loadDevices();
+            } catch (e) {
+                $("stepDot").classList.add("bad");
+                $("stepState").textContent = "Failed";
+                toast("Capture failed", e.message, 4500);
+                logLine(`ERROR: ${e.message}`);
+            } finally {
+                setBusy(false, "Ready");
+            }
+        }
+
+        // Modal open/close
+        function openModal() {
+            $("modalBack").style.display = "flex";
+            setModeUI();
+            resetWizard();
+        }
+        function closeModal() {
+            $("modalBack").style.display = "none";
+            setBusy(false, "Ready");
+        }
+
+        // Wiring
+        $("btnReload").addEventListener("click", loadDevices);
+        $("btnOpen").addEventListener("click", openModal);
+        $("btnClose").addEventListener("click", closeModal);
+        $("modalBack").addEventListener("click", (e) => { if (e.target === $("modalBack")) closeModal(); });
+
+        $("btnClearLog").addEventListener("click", () => $("log").textContent = "—");
+
+        $("mode").addEventListener("change", () => {
+            setModeUI();
+            resetWizard();
+        });
+        $("existingSelect").addEventListener("change", () => {
+            loadExistingToForm();
+            resetWizard();
+        });
+
+        $("btnReset").addEventListener("click", resetWizard);
+        $("btnCaptureOn").addEventListener("click", () => captureAndStore("on"));
+        $("btnCaptureOff").addEventListener("click", () => captureAndStore("off"));
+
+        // Init
+        (async () => { await loadDevices(); setConn("ok", "Connected"); })().catch(() => { });
+    </script>
+</body>
+
+</html>
