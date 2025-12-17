@@ -57,7 +57,7 @@ bool hasInternet = false;
 void setup() {
   Serial.begin(115200);
   Serial.printf("Flash size (bytes): %u\n", ESP.getFlashChipSize());
-  if (!LittleFS.begin(false)) {  //false means do not format the littlefs
+  if (!LittleFS.begin(false)) { //false means do not format the littlefs 
     Serial.println("LittleFS is Not available");
     delay(1000);
   } else {
@@ -73,22 +73,28 @@ void setup() {
     // checkInternetConnection();
     //getDeviceAccountDetails();
 
-    // 1) init RF as you already do
+// 1) init RF as you already do
 
 
-    // 2) add routes
-    setupSosApiRoutes_TwoButtons();
-    //Device Setup
+// 2) add routes
+setupSosApiRoutes_TwoButtons();
+    //Device Setup 
+    
   }
 }
 
 void loop() {
   // if (!loadingConfigFile) //do not load while saving configuration file
   {
-    // Serial.println("Loop Started...............");
+    Serial.println("Loop Started...............");
     server.handleClient();
-
+    Serial.println("Deviceloop Loop Started...............");
+    // Deviceloop();
+    Serial.println("networkLoop Loop Started...............");
     networkLoop();
+
+
+    Serial.println("Firmware Loop Started...............");
 
     updateFirmWareLoop();
     loopSosDevice();

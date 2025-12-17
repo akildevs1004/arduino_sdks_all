@@ -23,6 +23,10 @@
     /config.json includes "sos_devices":[{id,name,roomId,onCode,offCode,onBits,onProto,offBits,offProto,status,lastSeen}]
 */
 
+#include <WiFi.h>
+#include <WebServer.h>
+#include <LittleFS.h>
+#include <ArduinoJson.h>
 #include <RCSwitch.h>
 
 // ===================== USER SETTINGS =====================
@@ -30,19 +34,17 @@
 // static const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
 
 // KC868-A2 pins
-static const uint8_t RF_RX_PIN = 33;         // GPIO-1 terminal = GPIO33
-static const uint8_t RELAY1_SIREN_PIN = 15;  // Relay1 = GPIO15
-static const uint8_t RELAY2_LIGHT_PIN = 2;   // Relay1 = GPIO15
-
+static const uint8_t RF_RX_PIN   = 33;  // GPIO-1 terminal = GPIO33
+static const uint8_t RELAY1_PIN  = 15;  // Relay1 = GPIO15
 
 // Relay alarm behavior
-long ALARM_MS = 10000;  // Relay ON auto-timeout
+static const unsigned long ALARM_MS = 10000;   // Relay ON auto-timeout
 static const unsigned long DUP_IGNORE_MS = 400;
 
 // FS paths
 static const char* CONFIG_PATH = "/config.json";
-static const char* CONFIG_TMP = "/config.tmp";
-static const char* UI_SOSHTML_PATH = "/DeviceSOSRooms.html";
+static const char* CONFIG_TMP  = "/config.tmp";
+static const char* UI_SOSHTML_PATH     = "/DeviceSOSRooms.html";
 
 // JSON memory (increase if you store many devices)
 static const size_t CFG_SIZE = 32 * 1024;
@@ -53,16 +55,16 @@ static const size_t CFG_SIZE = 32 * 1024;
 RCSwitch rf;
 
 // Latest RF event (updated by loop)
-volatile uint32_t g_rfCode = 0;
-volatile uint16_t g_rfBits = 0;
-volatile uint8_t g_rfProto = 0;
+volatile uint32_t g_rfCode  = 0;
+volatile uint16_t g_rfBits  = 0;
+volatile uint8_t  g_rfProto = 0;
 volatile uint16_t g_rfPulse = 0;
-volatile uint32_t g_rfSeq = 0;
-volatile uint32_t g_rfAtMs = 0;
+volatile uint32_t g_rfSeq   = 0;
+volatile uint32_t g_rfAtMs  = 0;
 
 // Duplicate filter
 static uint32_t lastCode = 0;
-static uint32_t lastAt = 0;
+static uint32_t lastAt   = 0;
 
 // Relay timer
 static unsigned long alarmUntil = 0;
@@ -97,10 +99,14 @@ static void ensureSosArray() {
 
 static bool loadConfig() {
   ensureSosArray();
-  if (configDoc.containsKey("max_siren_play")) {
-    unsigned long sec = configDoc["max_siren_play"] | 10UL;  // default 10s
-    ALARM_MS = sec * 1000UL;
-  }
+
+  // if (!LittleFS.exists(CONFIG_PATH)) {
+  //   // Create default config if missing
+  //   configDoc.clear();
+  //   configDoc.createNestedArray("sos_devices");
+  //   return true;
+  // }
+
   File f = LittleFS.open(CONFIG_PATH, "r");
   if (!f) return false;
 
@@ -120,15 +126,13 @@ static bool loadConfig() {
 }
 
 static bool saveConfigAtomic() {
-  File f = LittleFS.open(CONFIG_PATH, "w");  // overwrite existing
+   File f = LittleFS.open(CONFIG_PATH, "w");  // overwrite existing
   if (!f) return false;
 
   size_t n = serializeJson(configDoc, f);
   f.flush();
   f.close();
 
-
-  publishConfigToMQTT();
   return (n > 0);
   // File f = LittleFS.open(CONFIG_TMP, "w");
   // if (!f) return false;
@@ -162,7 +166,7 @@ static JsonObject findDeviceById(int id) {
   for (JsonObject d : sosArr()) {
     if ((int)(d["id"] | 0) == id) return d;
   }
-  return JsonObject();  // invalid
+  return JsonObject(); // invalid
 }
 
 static bool codeExistsInOtherDevice(const String& code, int currentId) {
@@ -171,7 +175,7 @@ static bool codeExistsInOtherDevice(const String& code, int currentId) {
     int id = d["id"] | 0;
     if (id == currentId) continue;
 
-    String onC = String((const char*)(d["onCode"] | ""));
+    String onC  = String((const char*)(d["onCode"]  | ""));
     String offC = String((const char*)(d["offCode"] | ""));
     if (code == onC || code == offC) return true;
   }
@@ -179,16 +183,12 @@ static bool codeExistsInOtherDevice(const String& code, int currentId) {
 }
 
 static void relayOn() {
-
-  digitalWrite(RELAY1_SIREN_PIN, HIGH);
-
-
-
+  digitalWrite(RELAY1_PIN, HIGH);
   alarmUntil = millis() + ALARM_MS;
 }
 
 static void relayOff() {
-  digitalWrite(RELAY1_SIREN_PIN, LOW);
+  digitalWrite(RELAY1_PIN, LOW);
   alarmUntil = 0;
 }
 
@@ -204,37 +204,60 @@ static void setupRoutes() {
     server.send(404, "text/plain", "Not found");
   });
 
-
+  // // Serve UI file (optional)
+  // server.on("/", HTTP_GET, []() {
+  //   if (LittleFS.exists(UI_SOSHTML_PATH)) {
+  //     File f = LittleFS.open(UI_SOSHTML_PATH, "r");
+  //     server.sendHeader("Content-Type", "text/html");
+  //     server.streamFile(f, "text/html");
+  //     f.close();
+  //     return;
+  //   }
+  //   server.send(200, "text/plain", "UI not found. Upload /DeviceSOSRooms.html to LittleFS.");
+  // });
 
   server.on("/DeviceSOSRooms", HTTP_GET, []() {
-    loadingConfigFile = true;
 
 
-    if (!isAuthenticated()) {
-      server.sendHeader("Location", "/");
-      server.send(302);
-      return;
-    }
-    String header = readFile("/header.html");
-    String form = readFile("/DeviceSOSRooms.html");
-
-    String html;
-    html.reserve(header.length() + form.length());
-    html = header + form;
+  loadingConfigFile = true;
 
 
+  if (!isAuthenticated()) {
+    server.sendHeader("Location", "/");
+    server.send(302);
+    return;
+  }
+  String header = readFile("/header.html");
+  String form = readFile("/DeviceSOSRooms.html");
 
-    html = replaceHeaderContent(html);
+  String html;
+  html.reserve(header.length() + form.length());
+  html = header + form;
+
+  
+
+  html = replaceHeaderContent(html);
+ 
+
+  server.send(200, "text/html", html);
+  delay(1000);
+  loadingConfigFile = false;
 
 
-    server.send(200, "text/html", html);
-    delay(200);
-    loadingConfigFile = false;
+
+
+    // if (!LittleFS.exists(UI_SOSHTML_PATH)) {
+    //   server.send(404, "text/plain", "DeviceSOSRooms.html not found in LittleFS.");
+    //   return;
+    // }
+    // File f = LittleFS.open(UI_SOSHTML_PATH, "r");
+    // server.sendHeader("Content-Type", "text/html");
+    // server.streamFile(f, "text/html");
+    // f.close();
   });
 
   // List devices
   server.on("/api/sos/devices", HTTP_GET, []() {
-    loadConfig();
     DynamicJsonDocument out(8192);
     out["devices"] = configDoc["sos_devices"];
     sendJson(200, out);
@@ -243,12 +266,12 @@ static void setupRoutes() {
   // Latest RF event (from always-on loop)
   server.on("/api/sos/rf/last", HTTP_GET, []() {
     DynamicJsonDocument out(512);
-    out["seq"] = (uint32_t)g_rfSeq;
-    out["code"] = String((uint32_t)g_rfCode);
-    out["bits"] = (uint16_t)g_rfBits;
+    out["seq"]   = (uint32_t)g_rfSeq;
+    out["code"]  = String((uint32_t)g_rfCode);
+    out["bits"]  = (uint16_t)g_rfBits;
     out["proto"] = (uint8_t)g_rfProto;
     out["pulse"] = (uint16_t)g_rfPulse;
-    out["atMs"] = (uint32_t)g_rfAtMs;
+    out["atMs"]  = (uint32_t)g_rfAtMs;
     sendJson(200, out);
   });
 
@@ -275,12 +298,12 @@ static void setupRoutes() {
     String name = String((const char*)(in["name"] | ""));
     int roomId = in["roomId"] | 0;
 
-    String onCode = String((const char*)(in["onCode"] | ""));
+    String onCode  = String((const char*)(in["onCode"]  | ""));
     String offCode = String((const char*)(in["offCode"] | ""));
 
-    int onBits = in["onBits"] | 0;
-    int onProto = in["onProto"] | 0;
-    int offBits = in["offBits"] | 0;
+    int onBits   = in["onBits"] | 0;
+    int onProto  = in["onProto"] | 0;
+    int offBits  = in["offBits"] | 0;
     int offProto = in["offProto"] | 0;
 
     // If updating, allow blank fields (keep previous)
@@ -326,10 +349,10 @@ static void setupRoutes() {
     if (name.length()) d["name"] = name;
     d["roomId"] = roomId;
 
-    if (onCode.length()) d["onCode"] = onCode;
+    if (onCode.length())  d["onCode"] = onCode;
     if (offCode.length()) d["offCode"] = offCode;
 
-    if (in.containsKey("onBits")) d["onBits"] = onBits;
+    if (in.containsKey("onBits"))  d["onBits"] = onBits;
     if (in.containsKey("onProto")) d["onProto"] = onProto;
     if (in.containsKey("offBits")) d["offBits"] = offBits;
     if (in.containsKey("offProto")) d["offProto"] = offProto;
@@ -400,18 +423,92 @@ static void setupRoutes() {
   });
 }
 
+// ---------- Runtime: update status + relay from received codes ----------
+static void applyRfToDevicesAndRelay(uint32_t code, uint16_t bits, uint8_t proto, uint16_t pulse) {
+  // Update status only when code matches any onCode/offCode
+  // Avoid heavy FS writes unless status changed
+  bool changed = false;
 
+  // Use in-memory configDoc (already loaded). If other parts modify file externally,
+  // you can loadConfig() here, but that adds FS reads per RF event.
+  // Recommended: keep configDoc in RAM and only reload on HTTP modifications.
+  JsonArray arr = sosArr();
 
+  String codeStr = String(code);
+
+  for (JsonObject d : arr) {
+    String onC  = String((const char*)(d["onCode"]  | ""));
+    String offC = String((const char*)(d["offCode"] | ""));
+
+    if (onC.length() && codeStr == onC) {
+      String prev = String((const char*)(d["status"] | ""));
+      if (prev != "ON") {
+        d["status"] = "ON";
+        d["lastSeen"] = (uint32_t)millis();
+        changed = true;
+      }
+      // Relay ON behavior
+      relayOn();
+      break;
+    }
+
+    if (offC.length() && codeStr == offC) {
+      String prev = String((const char*)(d["status"] | ""));
+      if (prev != "OFF") {
+        d["status"] = "OFF";
+        d["lastSeen"] = (uint32_t)millis();
+        changed = true;
+      }
+      // Relay OFF behavior
+      relayOff();
+      break;
+    }
+  }
+
+  if (changed) {
+    saveConfigAtomic(); // persist latest status
+  }
+}
+
+// ===================== SETUP / LOOP =====================
+
+static void connectWiFi() {
+  // WiFi.mode(WIFI_STA);
+  // WiFi.begin(WIFI_SSID, WIFI_PASS);
+
+  Serial.print("WiFi connecting");
+  unsigned long start = millis();
+  while (WiFi.status() != WL_CONNECTED && (millis() - start) < 15000) {
+    delay(300);
+    Serial.print(".");
+  }
+  Serial.println();
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.print("WiFi connected. IP: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("WiFi not connected (timeout). Continue anyway.");
+  }
+}
 
 void setupSosApiRoutes_TwoButtons() {
   Serial.begin(115200);
   delay(200);
 
-  pinMode(RELAY1_SIREN_PIN, OUTPUT);
-  digitalWrite(RELAY1_SIREN_PIN, LOW);
+  pinMode(RELAY1_PIN, OUTPUT);
+  digitalWrite(RELAY1_PIN, LOW);
 
-  pinMode(RELAY2_LIGHT_PIN, OUTPUT);
-  digitalWrite(RELAY2_LIGHT_PIN, LOW);
+  // FS
+  // if (!LittleFS.begin(true)) {
+  //   Serial.println("LittleFS mount failed.");
+  // } else {
+  //   Serial.println("LittleFS OK.");
+  // }
+
+//   if (!LittleFS.begin(false)) {
+//   Serial.println("LittleFS mount failed (no auto-format).");
+// }
 
   // Load config
   loadConfig();
@@ -420,7 +517,8 @@ void setupSosApiRoutes_TwoButtons() {
     saveConfigAtomic();
   }
 
-
+  // Network
+  // connectWiFi();
 
   // RF receiver always on
   rf.enableReceive(digitalPinToInterrupt(RF_RX_PIN));
@@ -444,9 +542,9 @@ void loopSosDevice() {
   // RF scanning always on
   if (!rf.available()) return;
 
-  uint32_t code = rf.getReceivedValue();
-  uint16_t bits = rf.getReceivedBitlength();
-  uint8_t proto = rf.getReceivedProtocol();
+  uint32_t code  = rf.getReceivedValue();
+  uint16_t bits  = rf.getReceivedBitlength();
+  uint8_t  proto = rf.getReceivedProtocol();
   uint16_t pulse = rf.getReceivedDelay();
   rf.resetAvailable();
 
@@ -459,130 +557,18 @@ void loopSosDevice() {
   lastAt = now;
 
   // Store latest RF event for UI polling
-  g_rfCode = code;
-  g_rfBits = bits;
+  g_rfCode  = code;
+  g_rfBits  = bits;
   g_rfProto = proto;
   g_rfPulse = pulse;
-  g_rfAtMs = now;
+  g_rfAtMs  = now;
   g_rfSeq++;
 
-  Serial.print("RF RX code=");
-  Serial.print(code);
-  Serial.print(" bits=");
-  Serial.print(bits);
-  Serial.print(" proto=");
-  Serial.print(proto);
-  Serial.print(" pulse=");
-  Serial.println(pulse);
+  Serial.print("RF RX code="); Serial.print(code);
+  Serial.print(" bits="); Serial.print(bits);
+  Serial.print(" proto="); Serial.print(proto);
+  Serial.print(" pulse="); Serial.println(pulse);
 
   // Apply to status/relay if matches known devices
   applyRfToDevicesAndRelay(code, bits, proto, pulse);
-}
-
-
-// void pushToMqtt(String code) {
-
-
-
-
-//   if (config["mqtt_communication"])
-
-//   {
-//      String sosData;
-//     DynamicJsonDocument sosDoc2(2048);
-//     sosDoc2["serialNumber"] = config["device_serial_number"];
-//     sosDoc2["roomId"] = config["roomId"];
-//     sosDoc2["status"] = config["status"];
-//     sosDoc2["onCode"] = config["onCode"];
-//     sosDoc2["offCode"] = config["offCode"];
-//     sosDoc2["type"] = "sos";
-//     sosDoc2["timestamp"] = millis();
-//     serializeJson(sosDoc2, sosData);
-//       mqttSOSAlarmNotification(sosData);
-//   } else {
-//     Serial.print(" MQQT Is not enabled.");
-//   }
-// }
-
-
-
-
-// ---------- Runtime: update status + relay from received codes ----------
-static void publishSosEvent(JsonObject d, const char* newStatus) {
-
-  if (newStatus == "ON")
-    digitalWrite(RELAY2_LIGHT_PIN, HIGH);
-
-  else if (newStatus == "OFF")
-    digitalWrite(RELAY2_LIGHT_PIN, LOW);
-
-  updateSOSLightStatus();
-
-
-
-
-  if (!configDoc.containsKey("mqtt_communication") || !(configDoc["mqtt_communication"] | false)) {
-    Serial.println("MQTT disabled");
-    return;
-  }
-
-  DynamicJsonDocument payload(512);
-  payload["type"] = "sos";
-  payload["serialNumber"] = String((const char*)(configDoc["device_serial_number"] | ""));
-  payload["id"] = d["id"] | 0;
-  payload["name"] = String((const char*)(d["name"] | ""));
-  payload["roomId"] = d["roomId"] | 0;
-  payload["status"] = newStatus;
-  payload["code"] = (newStatus[0] == 'O' && newStatus[1] == 'N') ? String((const char*)(d["onCode"] | "")) : String((const char*)(d["offCode"] | ""));
-  payload["timestampMs"] = (uint32_t)millis();
-
-  String out;
-  serializeJson(payload, out);
-
-  mqttSOSAlarmNotification(out);  // your existing publisher
-  Serial.print("MQTT SOS payload: ");
-  Serial.println(out);
-}
-
-static void applyRfToDevicesAndRelay(uint32_t code, uint16_t bits, uint8_t proto, uint16_t pulse) {
-  bool changed = false;
-  JsonArray arr = sosArr();
-  String codeStr = String(code);
-
-  for (JsonObject d : arr) {
-    String onC = String((const char*)(d["onCode"] | ""));
-    String offC = String((const char*)(d["offCode"] | ""));
-
-    if (onC.length() && codeStr == onC) {
-      String prev = String((const char*)(d["status"] | "OFF"));
-      relayOn();
-
-      if (prev != "ON") {
-        d["status"] = "ON";
-        d["lastSeen"] = (uint32_t)millis();
-        changed = true;
-
-        publishSosEvent(d, "ON");
-      }
-      break;
-    }
-
-    if (offC.length() && codeStr == offC) {
-      String prev = String((const char*)(d["status"] | "OFF"));
-      relayOff();
-
-      if (prev != "OFF") {
-        d["status"] = "OFF";
-        d["lastSeen"] = (uint32_t)millis();
-        changed = true;
-
-        publishSosEvent(d, "OFF");
-      }
-      break;
-    }
-  }
-  if (changed) saveConfigAtomic();
-}
-
-void updateSOSLightStatus() {
 }

@@ -121,7 +121,7 @@ void updateJsonConfig(String filename, String param, String value) {
 
   if (config[param] == value) {
     loadingConfigFile = false;
-    Serial.println("No Value change - Same value is passed");
+
     return;
   }
 
@@ -134,10 +134,10 @@ void updateJsonConfig(String filename, String param, String value) {
 
     return;
   }
-  // Serial.println("StaticJsonDocument Buffer size ");
+
   // Allocate a buffer for the file content
-  StaticJsonDocument<3026> jsonDoc;
-  // Serial.println("StaticJsonDocument Size 2");
+  StaticJsonDocument<126> jsonDoc;
+
   // Deserialize the JSON data
   DeserializationError error = deserializeJson(jsonDoc, configFile);
   if (error) {
@@ -149,22 +149,9 @@ void updateJsonConfig(String filename, String param, String value) {
 
   // Add or update the parameter
   // jsonDoc[param] = value;
-  Serial.print("updateJsonConfig param-----------");
-  Serial.println(param);
 
-  if (param == "sos_devices") {
-    // Parse JSON string
 
-     Serial.println("Inside the function");
-    DeserializationError error = deserializeJson(jsonDoc[param], value);
-    if (error) {
-      Serial.println("Failed to parse sos_devices JSON: " + String(error.c_str()));
-      jsonDoc[param] = JsonArray();  // assign empty array as fallback
-    }
-
-    delay(2000);
-    // readAllSensors();
-  } else if (param == "temperature_alerts_config") {
+  if (param == "temperature_alerts_config") {
     // Parse JSON string
     DeserializationError error = deserializeJson(jsonDoc[param], value);
     if (error) {
@@ -173,7 +160,7 @@ void updateJsonConfig(String filename, String param, String value) {
     }
 
     delay(2000);
-    // readAllSensors();
+    readAllSensors();
   } else if (value == "true") {
     jsonDoc[param] = true;
   } else if (value == "false") {

@@ -11,7 +11,7 @@ void serveFile(const char* path, const char* contentType) {
     return;
   }
 
-  server.sendHeader("Cache-Control", "no-store");  // or "public,max-age=86400"
+  server.sendHeader("Cache-Control", "no-store"); // or "public,max-age=86400"
   server.streamFile(f, contentType);
   f.close();
 }
@@ -37,11 +37,11 @@ void routes() {
   // server.on("/sos.js", HTTP_GET, loadJS("/sos.js"));
   // server.on("/sos.css", HTTP_GET, loadCSS("/sos.css"));
 
-
+ 
   server.on("/sos.js", HTTP_GET, []() {
     serveFile("/sos.js", "application/javascript");
   });
-  server.on("/sos.css", HTTP_GET, []() {
+   server.on("/sos.css", HTTP_GET, []() {
     serveFile("/sos.css", "text/css");
   });
 
@@ -155,10 +155,6 @@ void handleLoginPage() {
   // }
   Serial.print("DeviceIPNumber -----------");
   Serial.println(DeviceIPNumber);
-
-  if (DeviceIPNumber =="") {
-    handleRestartDevice();
-  }
 
   html.replace("{firmWareVersion}", firmWareVersion);
   html.replace("{ipAddress}", DeviceIPNumber);
@@ -695,11 +691,11 @@ void sendPostRequest(const char* path, String payload) {
 
 void sendTemperatureDataToServerHttp(String jsonData) {
   {
-    // if (config["http_communication"])
-    //   sendNotificationToServerHttp(jsonData);
+    if (config["http_communication"])
+      sendNotificationToServerHttp(jsonData);
 
-    // if (config["socket_communication"])
-    //   sendAlarmTriggerToSocketserver(jsonData);
+    if (config["socket_communication"])
+      sendAlarmTriggerToSocketserver(jsonData);
 
     if (config["mqtt_communication"])
       mqttAlarmNotification(jsonData);

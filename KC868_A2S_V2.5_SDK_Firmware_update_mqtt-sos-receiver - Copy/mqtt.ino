@@ -21,8 +21,7 @@ String clientId = "xtremevision";
 String MqttTopic_sub = "";           //clientId + "/" + device_serial_number + "/config/request";
 String MqttTopic_pub = "";           //clientId + "/" + device_serial_number + "/config";
 String MqttTopic_pubheartbeat = "";  //clientId + "/" + device_serial_number + "/heartbeat";
-String MqttTopic_SOSalarm = "";      //clientId + "/" + device_serial_number + "/sosalarm";
-
+;
 // std::string topic_heartbeat_str = std::string("device/") + std::string(device_serial_number.c_str()) + "/heartbeat";
 
 // const char* topic_heartbeat = topic_heartbeat_str.c_str();
@@ -58,7 +57,7 @@ void MqttCallback(char* topic, byte* payload, unsigned int length) {
 
 void publishConfigToMQTT() {
 
-  readConfig("config.json");
+
 
   mqttclient.setBufferSize(3000);
   DynamicJsonDocument mqttconfig(3000);  // Increased from 1024 for safety
@@ -132,7 +131,8 @@ void updateConfigThrougMqtt(String message) {
   String deviceSerial = doc["serialNumber"];
 
   // Check if the message is meant for this device
-  if (device_serial_number == deviceSerial) {
+  if (device_serial_number == deviceSerial) 
+  {
     if (action == "UPDATE_CONFIG") {
       // Update the config file
       JsonObject configCloudServer = doc["config"];
@@ -143,15 +143,15 @@ void updateConfigThrougMqtt(String message) {
         JsonVariant value = kv.value();      // Get the value
 
         // Do something with the key-value pair
-        Serial.print("Key param-----------------------------------: ");
+        Serial.print("Key: ");
         Serial.print(key);
-        Serial.println(", Value: ");
-        Serial.print(value.as<String>());
+        Serial.print(", Value: ");
+        Serial.println(value.as<String>());
         updateJsonConfig("config.json", key, value);
         if (String(key).startsWith("relay")) {
           int relayNum = String(key).substring(5).toInt();  // extract number after "relay"
           if (relayNum >= 0 && relayNum < 4) {
-            // updateRelayStatusAction(relayNum, value);
+            updateRelayStatusAction(relayNum, value);
           }
         }
       }
@@ -168,7 +168,7 @@ void connectToMQTT() {
   mqttclient.setCallback(MqttCallback);
   if (!mqttclient.connected()) {
     //String clientId = String(device_serial_number);
-    clientId = clientId + "-" + device_serial_number;
+    clientId=clientId+"-"+device_serial_number;
     if (mqttclient.connect(clientId.c_str())) {
       Serial.println("MQTT connected");
       mqttclient.setBufferSize(3000);  // Must be ≥ your max payload
@@ -176,11 +176,6 @@ void connectToMQTT() {
       Serial.println("Subscribed to: " + MqttTopic_sub);
 
       updateJsonConfig("config.json", "mqtt", "online");
-
-      publishConfigToMQTT();
-
-
-
     } else {
       Serial.print(mqtt_server);
       Serial.print(mqtt_port);
@@ -190,7 +185,7 @@ void connectToMQTT() {
       Serial.println(mqttclient.state());
 
       updateJsonConfig("config.json", "mqtt", "offline");
-       delay(200);
+      delay(2000);
     }
   }
 }
@@ -199,18 +194,14 @@ void mqttsetup() {
   // mqtt_server =  config["mqtt_server"];//"broker.hivemq.com";
   // mqtt_port = config["mqtt_port"];//1883;
 
-
+ 
   mqtt_server = config["mqtt_server"].as<const char*>();
   mqtt_port = config["mqtt_port"].as<int>();
   clientId = config["mqtt_clientId"].as<String>();
 
-  MqttTopic_sub = clientId + "/" + device_serial_number + "/config/request";  //get config
-  MqttTopic_pub = clientId + "/" + device_serial_number + "/config";          //update config
-  MqttTopic_pubheartbeat = clientId + "/" + device_serial_number + "/heartbeat";
-  MqttTopic_SOSalarm = clientId + "/" + device_serial_number + "/sosalarm";
-
-
-
+   MqttTopic_sub = clientId + "/" + device_serial_number + "/config/request";
+  MqttTopic_pub = clientId  +"/" + device_serial_number + "/config";
+  MqttTopic_pubheartbeat = clientId +"/" + device_serial_number + "/heartbeat";
 
 
   connectToMQTT();
@@ -225,13 +216,10 @@ void mqttloop() {
 }
 
 void mqttHeartBeat(String hbPayload) {
-
+  // mqttclient.publish(topic_heartbeat, hbPayload.c_str());
 
   if (config["mqtt"] == "offline")
     connectToMQTT();
-
-
-  Serial.println(MqttTopic_pubheartbeat);
 
   Serial.println("MQTT - Heartbeat Sent");
   Serial.println(hbPayload);
@@ -245,9 +233,4 @@ void mqttAlarmNotification(String hbPayload) {
 
   mqttclient.publish(MqttTopic_pub.c_str(), hbPayload.c_str());
   publishConfigToMQTT();
-}
-void mqttSOSAlarmNotification(String hbPayload) {
-  Serial.println("MQTT - SOS Alarm Sent");
-  // Serial.println(hbPayload);
-  mqttclient.publish(MqttTopic_SOSalarm.c_str(), hbPayload.c_str());
 }
