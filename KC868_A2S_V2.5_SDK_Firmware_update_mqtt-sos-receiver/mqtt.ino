@@ -167,6 +167,8 @@ void updateConfigThrougMqtt(String message) {
 
 
 void connectToMQTT() {
+
+    
   mqttclient.setServer(mqtt_server, mqtt_port);
   mqttclient.setCallback(MqttCallback);
   if (!mqttclient.connected()) {
@@ -185,7 +187,10 @@ void connectToMQTT() {
 
 
     } else {
+
       Serial.print(mqtt_server);
+      Serial.print(":");
+
       Serial.print(mqtt_port);
 
 

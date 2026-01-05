@@ -466,6 +466,12 @@ void setupSosApiRoutes_TwoButtons() {
     pinMode(RELAY1_NETWORK_STATUS_PIN, OUTPUT);
   digitalWrite(RELAY1_NETWORK_STATUS_PIN, LOW);
 
+ delay(300);
+  digitalWrite(RELAY1_NETWORK_STATUS_PIN, HIGH);
+  
+ delay(300);
+  digitalWrite(RELAY1_NETWORK_STATUS_PIN, HIGH);
+
   pinMode(RELAY2_LIGHT_PIN, OUTPUT);
   digitalWrite(RELAY2_LIGHT_PIN, LOW);
 

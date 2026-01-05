@@ -535,6 +535,8 @@ void onEthEvent(WiFiEvent_t event) {
       isNetworkConnected = true;
       checkInternetConnection();
         publishConfigToMQTT();
+      digitalWrite(RELAY1_NETWORK_STATUS_PIN, HIGH);
+
       break;
 
     case ARDUINO_EVENT_ETH_GOT_IP:
@@ -552,6 +554,7 @@ void onEthEvent(WiFiEvent_t event) {
       isNetworkConnected = false;
       hasInternet = false;
       pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
+      digitalWrite(RELAY1_NETWORK_STATUS_PIN, LOW);
       updateJsonConfig("config.json", "internet", "offline");
       updateJsonConfig("config.json", "relay5", "false");
 
@@ -559,10 +562,12 @@ void onEthEvent(WiFiEvent_t event) {
 
       break;
     case ARDUINO_EVENT_ETH_DISCONNECTED:
-      Serial.println("❌ Ethernet Disconnected");
+      Serial.println("❌ Ethernet Disconnected111111111111");
       isNetworkConnected = false;
       hasInternet = false;
-      pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
+    //  pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
+        digitalWrite(RELAY1_NETWORK_STATUS_PIN, LOW);
+   
       updateJsonConfig("config.json", "internet", "offline");
       updateJsonConfig("config.json", "relay5", "false");
 
@@ -575,6 +580,7 @@ void onEthEvent(WiFiEvent_t event) {
       isNetworkConnected = false;
       hasInternet = false;
       pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
+      digitalWrite(RELAY1_NETWORK_STATUS_PIN, LOW);
       updateJsonConfig("config.json", "internet", "offline");
       updateJsonConfig("config.json", "relay5", "false");
 
@@ -626,6 +632,7 @@ void onWiFiEvent(WiFiEvent_t event) {
       isNetworkConnected = false;
       hasInternet = false;
       pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
+      digitalWrite(RELAY1_NETWORK_STATUS_PIN, LOW);
       updateJsonConfig("config.json", "internet", "offline");
       updateJsonConfig("config.json", "relay5", "false");
 
@@ -638,6 +645,7 @@ void onWiFiEvent(WiFiEvent_t event) {
       isNetworkConnected = false;
       hasInternet = false;
       pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
+      digitalWrite(RELAY1_NETWORK_STATUS_PIN, LOW);
       updateJsonConfig("config.json", "internet", "offline");
       updateJsonConfig("config.json", "relay5", "false");
 
@@ -665,10 +673,12 @@ void checkInternetConnection() {
     Serial.println("🌍 ✅  Internet Available");
     hasInternet = true;
     pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, LOW);  // LOW = ON
+       digitalWrite(RELAY1_NETWORK_STATUS_PIN, HIGH);
+
     updateJsonConfig("config.json", "internet", "online");
     updateJsonConfig("config.json", "relay5", "true");
-
-digitalWrite(RELAY1_NETWORK_STATUS_PIN, HIGH);
+delay(1000);
+ mqttsetup();
 
 
   } else {
@@ -676,10 +686,12 @@ digitalWrite(RELAY1_NETWORK_STATUS_PIN, HIGH);
     Serial.println("🌐 ❌ Internet Lost");
     hasInternet = false;
     pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
+         digitalWrite(RELAY1_NETWORK_STATUS_PIN, LOW);
+
     updateJsonConfig("config.json", "internet", "offline");
     updateJsonConfig("config.json", "relay5", "false");
 
-    digitalWrite(RELAY1_NETWORK_STATUS_PIN, LOW);
+     
   }
 }
 
