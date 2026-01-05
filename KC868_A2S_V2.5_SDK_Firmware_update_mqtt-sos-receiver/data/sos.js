@@ -155,6 +155,8 @@ function setStepUI() {
   dot.classList.remove("ok", "bad");
 
   if (step === 1) {
+    toast("Step 1: Press SOS ON button on Device", "", 3000);
+
     $("stepTitle").textContent = "Step 1: Press SOS ON button on Device";
     // $("stepText").innerHTML =
     //"Waiting for a new RF code… once received, it will be recorded as <b>SOS ON</b>.";
@@ -164,6 +166,7 @@ function setStepUI() {
     $("btnSave").disabled = true;
   }
   if (step === 2) {
+    toast("Step 2: Press SOS OFF button on Device", "", 3000);
     $("stepTitle2").textContent = "  Step 2: Press SOS OFF button on Device";
     $("stepText").innerHTML =
       "Waiting for the next new RF code… once received, it will be recorded as <b>SOS OFF</b>.";
@@ -173,6 +176,7 @@ function setStepUI() {
     $("btnSave").disabled = true;
   }
   if (step === 3) {
+    toast("Step 3: Now enter Device Name And Room Number ", "", 3000);
     $("stepTitle3").textContent = "Captured successfully";
     $("stepText").innerHTML =
       "<b>SOS ON</b> and <b>SOS OFF</b> are recorded. Now enter Device Name (Purpose) and Save.";

@@ -1,0 +1,497 @@
+#include <WiFi.h>
+#include <WiFiManager.h>
+#include <FS.h>
+#include <LittleFS.h>
+#include <ArduinoJson.h>
+#include <WebServer.h>
+#include <HTTPClient.h>
+#include <EEPROM.h>
+#include <WiFiClientSecure.h>
+#include <ArduinoOTA.h>
+#include <ModbusMaster.h>
+// Global objects
+HTTPClient http;
+WiFiManager wifiManager;
+WebServer server(80);
+DynamicJsonDocument jsonConfig(1024);
+
+// MQTT Broker
+String mqtt_server = "broker.hivemq.com";
+int mqtt_port = 1883;
+String clientId = "xtremevision_switch";
+String mqtt_clientId = "xtremevision_switch";
+
+// Pin and configuration variables
+const int switchPin = 3;
+const int LED_PIN = 8;
+const unsigned long FAST_BLINK = 300;   // No Wi-Fi
+const unsigned long SLOW_BLINK = 1000;  // Wi-Fi OK, No Internet
+
+String serialNumber = "HOTELSWITCH";  // Default Serial Number
+
+String device_serial_number = "";
+
+String serverURL, wifiSSID, wifiPassword, ipAddress;
+
+const char* USERNAME = "admin";
+String PASSWORD = "password";
+
+String temperatureThreshold = "30";
+int previousSwitchState = HIGH;
+bool shouldSaveConfig = false;
+String socketConnectionStatus = "Disconencted";
+
+// Replace with your server's IP address and port
+String server_ip = "";    // Server IP address
+String server_port = "";  // Server port number
+
+String gmtTimeZone = "";
+
+// IP configuration
+IPAddress gateway(192, 168, 1, 1);
+IPAddress subnet(255, 255, 255, 0);
+String deviceIPaddress = "";
+
+int intervalHeartbeat = 60;  // Interval at which to send heartbeat (10 seconds)
+
+
+
+// Function declarations
+bool saveConfig();
+bool loadConfig();
+void saveConfigCallback();
+void handleRoot();
+void handleSaveConfig();
+void sendSwitchStatus(int status);
+void wifiManagerSetup();
+void listLittleFSFiles();
+void handleConfigJson();
+void connectToWiFi();
+void connectToWiFi2(bool status);
+void connectToWiFiSetup(bool status);
+
+
+void setStaticIP();
+void safeRestart();
+bool socketConnectServer();
+void socketDeviceHeartBeatToServer();
+bool testInternet();
+
+void networkLoop();
+void blinkBlueLight(int times);
+
+String firmWareVersion = "1.1";
+const char* ssid = "akil";
+// const char* password = "Akil1234";
+
+// -------- Global states --------
+bool isNetworkConnected = false;  // Wi-Fi link (WL_CONNECTED)
+bool hasInternet = false;         // Internet reachability
+
+
+WiFiClient client;  // Create a client object
+
+
+#include <RCSwitch.h>
+
+RCSwitch rf;
+
+// ===== KC868-A2 PINS (from KinCony forum) =====
+static const uint8_t RF_RX_PIN = 33;   // GPIO-1 terminal = GPIO33
+static const uint8_t RELAY1_PIN = 15;  // Relay1 = GPIO15
+
+// ===== SETTINGS =====
+static const unsigned long ALARM_MS = 10000;  // 10 seconds
+static const unsigned long DUP_IGNORE_MS = 400;
+
+// Auto-learn on first press, then trigger on next presses
+unsigned long learnedCode = 0;
+unsigned int learnedBits = 0;
+unsigned int learnedProto = 0;
+
+unsigned long alarmUntil = 0;
+unsigned long lastCode = 0;
+unsigned long lastAt = 0;
+void setup() {
+  Serial.begin(115200);
+  delay(200);
+  Serial.println("Testing---------------------------");
+
+
+
+/*
+
+
+  WiFi.mode(WIFI_OFF);
+  delay(1000);
+  //This line hides the viewing of ESP as wifi hotspot
+  WiFi.mode(WIFI_STA);
+  networkSetup();
+  // Initialize LittleFS*/
+  if (!LittleFS.begin(true)) {
+    Serial.println("Error mounting LittleFS. Restarting...");
+    safeRestart();
+  }
+
+  if (!loadConfig()) {
+    Serial.println("Error loading config. Resetting WiFi credentials.");
+    wifiManager.resetSettings();
+  }
+
+  connectToWiFiSetup();
+  WiFi.onEvent(onWiFiEvent);
+  Serial.println("");
+  Serial.println("");
+  Serial.println("");
+  Serial.println("");
+  Serial.println("✅Device IP Address: ---------------------------------------------------" + WiFi.localIP().toString());
+  Serial.println("");
+  Serial.println("");
+  Serial.println("");
+  Serial.println("");
+  Serial.println("");
+  /*
+  String ipStr = WiFi.localIP().toString();
+
+  updateJsonConfig("config.json", "ipAddress", ipStr.c_str());
+
+
+  logmessage("Web server started at: " + WiFi.localIP().toString());
+
+  // Initialize Web Server
+  routesSetup();
+  server.begin();
+  logmessage("Web server started at: " + WiFi.localIP().toString());
+
+
+
+  if (testInternet()) {
+
+    mqttsetup();
+  }
+
+  else {
+
+    Serial.println("XXXXXXXXXXXXXXXXXXXXXXXX No Internet Connection XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+  }
+  updateFirmWaresetup();
+  uploadHTMLsetup();
+
+  Serial.print("Version--------------------------------------------------------------------------");
+  Serial.println(firmWareVersion);*/
+
+
+
+
+
+
+
+
+
+
+  pinMode(RELAY1_PIN, OUTPUT);
+  digitalWrite(RELAY1_PIN, LOW);
+
+  // Enable RF receiver on ESP32
+  rf.enableReceive(digitalPinToInterrupt(RF_RX_PIN));
+
+  Serial.println("\nKC868-A2 + MX-RM-5V Receiver Ready");
+  Serial.println("Press SOS button once to LEARN code, press again to TRIGGER Relay1.");
+
+  Serial.println("Checking Receiver........");
+}
+void setupold() {
+
+
+
+  Serial.begin(115200);  // Start the Serial communication at 115200 baud rate
+  delay(1000);
+
+
+
+  // pinMode(switchPin, INPUT_PULLUP);
+  // pinMode(LED_PIN, OUTPUT);
+  // digitalWrite(LED_PIN, HIGH);  //OFF - No network
+
+  WiFi.mode(WIFI_OFF);
+  delay(1000);
+  //This line hides the viewing of ESP as wifi hotspot
+  WiFi.mode(WIFI_STA);
+  networkSetup();
+  // Initialize LittleFS
+  if (!LittleFS.begin(true)) {
+    Serial.println("Error mounting LittleFS. Restarting...");
+    safeRestart();
+  }
+
+  if (!loadConfig()) {
+    Serial.println("Error loading config. Resetting WiFi credentials.");
+    wifiManager.resetSettings();
+  }
+
+  connectToWiFiSetup();
+  WiFi.onEvent(onWiFiEvent);
+  Serial.println("");
+  Serial.println("");
+  Serial.println("");
+  Serial.println("");
+  Serial.println("✅Device IP Address: ---------------------------------------------------" + WiFi.localIP().toString());
+  Serial.println("");
+  Serial.println("");
+  Serial.println("");
+  Serial.println("");
+  Serial.println("");
+
+  String ipStr = WiFi.localIP().toString();
+
+  updateJsonConfig("config.json", "ipAddress", ipStr.c_str());
+
+
+  logmessage("Web server started at: " + WiFi.localIP().toString());
+
+  // Initialize Web Server
+  routesSetup();
+  server.begin();
+  logmessage("Web server started at: " + WiFi.localIP().toString());
+
+
+
+  if (testInternet()) {
+
+    mqttsetup();
+  }
+
+  else {
+
+    Serial.println("XXXXXXXXXXXXXXXXXXXXXXXX No Internet Connection XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+  }
+  updateFirmWaresetup();
+  uploadHTMLsetup();
+
+  Serial.print("Version--------------------------------------------------------------------------");
+  Serial.println(firmWareVersion);
+}
+
+void loop() {
+  // server.handleClient();
+  // handleSwitchState();
+  // networkLoop();
+  // if (hasInternet) {
+  //   mqttloop();
+  //   handleHeartbeat();
+  // }
+  // delay(1000);  // Non-blocking delay
+}
+
+
+void handleSwitchState() {
+  int switchState = !digitalRead(switchPin);
+
+  if (switchState != previousSwitchState) {
+    sendSwitchStatus(switchState);
+    previousSwitchState = switchState;
+  }
+}
+void connectToWiFiSetup() {
+  connectToWiFi2(true);
+}
+void connectToWiFi() {
+
+  connectToWiFi2(false);
+}
+
+void connectToWiFi2(bool issetup) {
+  Serial.println("Connecting to WiFi... Initiated " + wifiSSID + " " + wifiPassword);
+
+  if (!wifiSSID.isEmpty() && !wifiPassword.isEmpty()) {
+
+
+    WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
+    int retryCount = 0;
+
+    while (WiFi.status() != WL_CONNECTED && retryCount < 5) {
+      delay(1000);
+      Serial.println("Connecting to WiFi..." + wifiSSID);
+      retryCount++;
+    }
+
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("Connected to WiFi!");
+
+      isNetworkConnected = true;
+
+      updateJsonConfig("config.json", "wifiConnection", "Connected");
+
+      // setStaticIP();
+
+    } else if (wifiPassword.isEmpty()) {
+      /*
+
+      Serial.println("Failed to connect. Starting WiFiManager...");
+
+      updateJsonConfig("config.json", "wifiConnection", "Disconnected");
+
+      Serial.println("\n❌ Failed to connect, starting AP mode...");
+
+      WiFi.mode(WIFI_AP);
+      if (WiFi.softAP(serialNumber.c_str())) {
+        Serial.println("✅ AP started! 111111111111111111111111111111111111111111111");
+        Serial.print("AP SSID: ");
+        Serial.println(serialNumber.c_str());
+        Serial.print("AP IP Address: ");
+        Serial.println(WiFi.softAPIP());
+      } else {
+        Serial.println("❌ Failed to start AP!");
+      }
+
+      wifiManagerSetup();
+
+      */
+      Serial.println("❌ AP started ERROR ! 111111111111111111111111111111111111111111111");
+    }
+  }
+
+  if (wifiPassword.isEmpty() && issetup) {
+
+    WiFi.persistent(true);
+    // Disconnect from any STA (client) connection
+    WiFi.disconnect(true, true);  // true,true → erase old config too
+
+
+    Serial.println("EMPTY Password");
+
+    Serial.println("Failed to connect. Starting WiFiManager...");
+
+    updateJsonConfig("config.json", "wifiConnection", "Disconnected");
+
+    Serial.println("\n❌ Failed to connect, starting AP mode...");
+
+    WiFi.mode(WIFI_AP);
+    if (WiFi.softAP(serialNumber.c_str())) {
+      Serial.println("✅ AP started! with Empty Password ");
+      Serial.print("AP SSID: ");
+      Serial.println(serialNumber.c_str());
+      Serial.print("AP IP Address: ");
+      Serial.println(WiFi.softAPIP());
+    } else {
+      Serial.println("❌ Failed to start AP!");
+    }
+
+    wifiManagerSetup();
+  }
+}
+
+void setStaticIP() {
+
+  // String ipStr =   jsonConfig["ipAddress"].as<String>();;
+  String ipStr = jsonConfig["ipAddress"].as<String>();
+  ;
+  if (ipStr.isEmpty()) {
+    Serial.println("⚠️ No static IP in config → keep DHCP.");
+    return;
+  }
+
+  IPAddress cfgIP;
+  if (!cfgIP.fromString(ipStr)) {
+    Serial.println("❌ Invalid static IP in config → keep DHCP.");
+    return;
+  }
+
+  IPAddress currentIP = WiFi.localIP();
+
+  Serial.println(currentIP);
+  Serial.println(cfgIP);
+
+
+  if (currentIP == cfgIP) {
+    Serial.println("ℹ️ Current IP already matches config IP → nothing to change.");
+    return;
+  }
+
+  // Defaults: no gateway, no DNS, /24 subnet
+  IPAddress gw(0, 0, 0, 0), subnet(255, 255, 255, 0), dns(0, 0, 0, 0);
+
+  if (WiFi.config(cfgIP, gw, subnet, dns)) {
+    Serial.println("✅ Changed to config IP:");
+    Serial.print("  Old IP: ");
+    Serial.println(currentIP);
+    Serial.print("  New IP: ");
+    Serial.println(WiFi.localIP());
+
+    // updateJsonConfig("config.json", "ipAddress", WiFi.localIP().toString().c_str());
+
+    String ipStr = WiFi.localIP().toString();
+    updateJsonConfig("config.json", "ipAddress", ipStr.c_str());  // pointer stays va
+  } else {
+    Serial.println("❌ Failed to apply config IP → keeping DHCP IP.");
+  }
+}
+
+void wifiManagerSetup() {
+  wifiManager.setSaveConfigCallback(saveConfigCallback);
+  if (!wifiManager.autoConnect(serialNumber.c_str())) {
+    Serial.println("WiFiManager failed. Restarting...");
+    delay(3000);
+    safeRestart();
+  }
+
+  wifiSSID = WiFi.SSID();
+  wifiPassword = "";  // WiFi password is typically not retrievable
+
+  if (shouldSaveConfig) {
+    saveConfig();
+  }
+}
+
+void sendSwitchStatus(int status) {
+
+
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi not connected. Cannot send switch status.");
+    return;
+  }
+  DynamicJsonDocument doc(512);
+
+  doc["room_number"] = serialNumber;
+  doc["status"] = status;                                   // avoid duplicating semantics unless
+  doc["ipAddress"] = jsonConfig["ipAddress"].as<String>();  // avoid duplicating semantics unless
+
+
+
+  String body;
+  serializeJson(doc, body);
+
+  if (WiFi.status() == WL_CONNECTED) {
+
+    mqttPublishMessage(body);
+    HTTPClient http;
+    http.begin(serverURL);   // for HTTPS: use WiFiClientSecure and set cert/INSECURE
+    http.setTimeout(10000);  // 10s timeout
+    http.addHeader("Content-Type", "application/json");
+    Serial.println("serverURL: " + serverURL);
+
+    Serial.println("POST JSON: " + body);
+    int code = http.POST(body);
+
+    String resp = http.getString();
+    Serial.printf("HTTP %d\n", code);
+    Serial.println("Response: " + resp);
+
+    if (code > 0 && code < 400) {
+      /////////blinkLight(FAST_BLINK); // success blink
+    } else {
+      //blinkBlueLight(5, 70, 70);  // error blink
+    }
+    http.end();
+  } else {
+    Serial.println("WiFi not connected");
+  }
+}
+
+void logmessage(String message) {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi not connected. Cannot send switch status.");
+    return;
+  }
+}

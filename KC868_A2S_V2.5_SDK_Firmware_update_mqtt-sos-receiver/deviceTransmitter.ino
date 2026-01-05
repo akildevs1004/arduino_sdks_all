@@ -31,13 +31,18 @@
 
 // KC868-A2 pins
 static const uint8_t RF_RX_PIN = 33;         // GPIO-1 terminal = GPIO33
-static const uint8_t RELAY1_SIREN_PIN = 15;  // Relay1 = GPIO15
+static const uint8_t RELAY1_NETWORK_STATUS_PIN = 15;  // Relay1 = GPIO15
 static const uint8_t RELAY2_LIGHT_PIN = 2;   // Relay1 = GPIO15
+
+
+
+
+
 
 
 // Relay alarm behavior
 long ALARM_MS = 10000;  // Relay ON auto-timeout
-static const unsigned long DUP_IGNORE_MS = 400;
+static const unsigned long DUP_IGNORE_MS = 1000;
 
 // FS paths
 static const char* CONFIG_PATH = "/config.json";
@@ -70,6 +75,8 @@ static unsigned long alarmUntil = 0;
 // Config document
 static DynamicJsonDocument configDoc(CFG_SIZE);
 
+bool firstLoad=true;
+
 // ---------- Helpers ----------
 static void addCorsHeaders() {
   server.sendHeader("Access-Control-Allow-Origin", "*");
@@ -95,6 +102,51 @@ static void ensureSosArray() {
   }
 }
 
+static bool forceAllSosOffAndSave(bool resetLastSeenToZero = false) {
+  // Ensure we have the latest config loaded from flash
+  loadConfig();
+
+  bool changed = false;
+  JsonArray arr = sosArr();
+
+  for (JsonObject d : arr) {
+    const char* st = d["status"] | "OFF";
+
+    // If not OFF, force OFF
+    if (strcmp(st, "OFF") != 0) {
+      d["status"] = "OFF";
+      changed = true;
+    }
+
+    // Optional: reset lastSeen
+    if (resetLastSeenToZero) {
+      uint32_t ls = d["lastSeen"] | 0;
+      if (ls != 0) {
+        d["lastSeen"] = 0;
+        changed = true;
+      }
+    } else {
+      // Ensure the key exists
+      if (!d.containsKey("lastSeen")) {
+        d["lastSeen"] = 0;
+        changed = true;
+      }
+    }
+
+    // Ensure status key exists
+    if (!d.containsKey("status")) {
+      d["status"] = "OFF";
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    return saveConfigAtomic();  // saves and (in your code) publishes config to MQTT
+  }
+
+  // Nothing changed, no write
+  return true;
+}
 static bool loadConfig() {
   ensureSosArray();
   if (configDoc.containsKey("max_siren_play")) {
@@ -128,7 +180,9 @@ static bool saveConfigAtomic() {
   f.close();
 
 
-  publishConfigToMQTT();
+  if (configDoc["mqtt_communication"] | false) {
+    publishConfigToMQTT();
+  }
   return (n > 0);
   // File f = LittleFS.open(CONFIG_TMP, "w");
   // if (!f) return false;
@@ -180,15 +234,12 @@ static bool codeExistsInOtherDevice(const String& code, int currentId) {
 
 static void relayOn() {
 
-  digitalWrite(RELAY1_SIREN_PIN, HIGH);
-
-
-
+  // digitalWrite(RELAY1_SIREN_PIN, HIGH);
   alarmUntil = millis() + ALARM_MS;
 }
 
 static void relayOff() {
-  digitalWrite(RELAY1_SIREN_PIN, LOW);
+  // digitalWrite(RELAY1_SIREN_PIN, LOW);
   alarmUntil = 0;
 }
 
@@ -404,22 +455,31 @@ static void setupRoutes() {
 
 
 void setupSosApiRoutes_TwoButtons() {
-  Serial.begin(115200);
+
+
+  // Serial.begin(115200);
   delay(200);
 
-  pinMode(RELAY1_SIREN_PIN, OUTPUT);
-  digitalWrite(RELAY1_SIREN_PIN, LOW);
+  // pinMode(RELAY1_SIREN_PIN, OUTPUT);
+  // digitalWrite(RELAY1_SIREN_PIN, LOW);
+
+    pinMode(RELAY1_NETWORK_STATUS_PIN, OUTPUT);
+  digitalWrite(RELAY1_NETWORK_STATUS_PIN, LOW);
 
   pinMode(RELAY2_LIGHT_PIN, OUTPUT);
   digitalWrite(RELAY2_LIGHT_PIN, LOW);
 
   // Load config
   loadConfig();
-  // // If config was missing, save a new one
+  // If config was missing, save a new one
   if (!LittleFS.exists(CONFIG_PATH)) {
     saveConfigAtomic();
   }
 
+  // Force all SOS statuses OFF at boot and persist
+  // - pass true if you also want lastSeen = 0 for all
+  forceAllSosOffAndSave(false);
+  //saveConfigAtomic();
 
 
   // RF receiver always on
@@ -454,6 +514,12 @@ void loopSosDevice() {
 
   // Duplicate ignore window
   uint32_t now = millis();
+  Serial.print("Difference in Secons -----------------------------------");
+
+  Serial.println(now - lastAt);
+
+   
+
   if (code == lastCode && (now - lastAt) < DUP_IGNORE_MS) return;
   lastCode = code;
   lastAt = now;
@@ -477,6 +543,8 @@ void loopSosDevice() {
 
   // Apply to status/relay if matches known devices
   applyRfToDevicesAndRelay(code, bits, proto, pulse);
+
+  firstLoad=false;
 }
 
 
@@ -510,10 +578,10 @@ void loopSosDevice() {
 // ---------- Runtime: update status + relay from received codes ----------
 static void publishSosEvent(JsonObject d, const char* newStatus) {
 
-  if (newStatus == "ON")
+  if (strcmp(newStatus, "ON") == 0)
     digitalWrite(RELAY2_LIGHT_PIN, HIGH);
 
-  else if (newStatus == "OFF")
+  else if (strcmp(newStatus, "OFF") == 0)
     digitalWrite(RELAY2_LIGHT_PIN, LOW);
 
   updateSOSLightStatus();
@@ -557,7 +625,8 @@ static void applyRfToDevicesAndRelay(uint32_t code, uint16_t bits, uint8_t proto
       String prev = String((const char*)(d["status"] | "OFF"));
       relayOn();
 
-      if (prev != "ON") {
+       // if (prev != "ON" || firstLoad)
+      {
         d["status"] = "ON";
         d["lastSeen"] = (uint32_t)millis();
         changed = true;
@@ -571,7 +640,8 @@ static void applyRfToDevicesAndRelay(uint32_t code, uint16_t bits, uint8_t proto
       String prev = String((const char*)(d["status"] | "OFF"));
       relayOff();
 
-      if (prev != "OFF") {
+     //  if (prev != "OFF" || firstLoad)
+      {
         d["status"] = "OFF";
         d["lastSeen"] = (uint32_t)millis();
         changed = true;

@@ -534,6 +534,7 @@ void onEthEvent(WiFiEvent_t event) {
       Serial.println("✅ Ethernet Connected");
       isNetworkConnected = true;
       checkInternetConnection();
+        publishConfigToMQTT();
       break;
 
     case ARDUINO_EVENT_ETH_GOT_IP:
@@ -544,6 +545,7 @@ void onEthEvent(WiFiEvent_t event) {
       mqttsetup();
       isNetworkConnected = true;
       checkInternetConnection();
+        publishConfigToMQTT();
       break;
     case ARDUINO_EVENT_ETH_STOP:
       Serial.println("⛔ Ethernet Stopped");
@@ -666,7 +668,7 @@ void checkInternetConnection() {
     updateJsonConfig("config.json", "internet", "online");
     updateJsonConfig("config.json", "relay5", "true");
 
-
+digitalWrite(RELAY1_NETWORK_STATUS_PIN, HIGH);
 
 
   } else {
@@ -676,6 +678,8 @@ void checkInternetConnection() {
     pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, HIGH);  // LOW = ON
     updateJsonConfig("config.json", "internet", "offline");
     updateJsonConfig("config.json", "relay5", "false");
+
+    digitalWrite(RELAY1_NETWORK_STATUS_PIN, LOW);
   }
 }
 
