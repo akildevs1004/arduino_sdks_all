@@ -188,6 +188,10 @@ void connectToMQTT() {
   String connectId = clientId + "-" + device_serial_number;
 
   Serial.print("Attempting MQTT connection... ");
+  Serial.print(mqtt_server);
+
+
+  
 
   if (mqttclient.connect(connectId.c_str()))
 

@@ -24,7 +24,8 @@ function escapeHtml(s) {
 function logLine(line) {
   const el = $("log");
   const now = new Date().toLocaleString();
-  if (el.textContent.trim() === "—") el.textContent = "";
+  if (el && el.textContent.trim() === "—") el.textContent = "";
+  if (!el) return;
   el.textContent += `[${now}] ${line}\n`;
   el.scrollTop = el.scrollHeight;
 }
@@ -39,6 +40,7 @@ function toast(title, msg, ms = 2800) {
 function setConn(state, msg) {
   const dot = $("connDot"),
     txt = $("connText");
+  if (!dot || !txt) return;
   txt.textContent = msg;
   dot.classList.remove("ok", "bad");
   if (state === "ok") dot.classList.add("ok");
@@ -85,10 +87,6 @@ function statusChip(status) {
 function render() {
   $("count").textContent = String(devices.length);
   const tb = $("tbody");
-  //   if (!devices.length) {
-  //     tb.innerHTML = `<tr><td colspan="7" class="hint">0 SOS Devices registered.</td></tr>`;
-  //     return;
-  //   }
   tb.innerHTML = devices
     .map(
       (d) => `
@@ -144,9 +142,9 @@ let pollTimer = null;
 let baseSeq = 0;
 let lastSeenSeq = 0;
 
-let step = 1; // 1=ON wait, 2=OFF wait, 3=purpose input
+let step = 1; // 1=ON wait (required), 2=OFF wait (optional), 3=purpose input
 let capturedOn = null; // {code,bits,proto}
-let capturedOff = null; // {code,bits,proto}
+let capturedOff = null; // OPTIONAL {code,bits,proto}
 
 let existingMatchId = 0; // if ON/OFF matches existing device, we update it
 
@@ -157,33 +155,51 @@ function setStepUI() {
   if (step === 1) {
     toast("Step 1: Press SOS ON button on Device", "", 3000);
 
-    $("stepTitle").textContent = "Step 1: Press SOS ON button on Device";
-    // $("stepText").innerHTML =
-    //"Waiting for a new RF code… once received, it will be recorded as <b>SOS ON</b>.";
+    $("stepTitle").textContent =
+      "Step 1: Press SOS ON button on Device (Required)";
+    $("stepTitle2").textContent = "";
+    $("stepTitle3").textContent = "";
+    $("stepText").innerHTML =
+      "Waiting for a new RF code… once received, it will be recorded as <b>SOS ON</b>.";
     $("stepState").textContent = "Waiting";
     $("footerHint").textContent = "Step 1 is active: press SOS ON button.";
     $("purposeBlock").style.display = "none";
     $("btnSave").disabled = true;
   }
+
   if (step === 2) {
-    toast("Step 2: Press SOS OFF button on Device", "", 3000);
-    $("stepTitle2").textContent = "  Step 2: Press SOS OFF button on Device";
+    toast(
+      "Step 2: Press SOS OFF button (Optional) OR Save without OFF",
+      "",
+      3000
+    );
+
+    // Keep your extra title line
+    $("stepTitle2").textContent =
+      "Step 2: Press SOS OFF button on Device (Optional)";
     $("stepText").innerHTML =
-      "Waiting for the next new RF code… once received, it will be recorded as <b>SOS OFF</b>.";
-    $("stepState").textContent = "Waiting";
-    $("footerHint").textContent = "Step 2 is active: press SOS OFF button.";
-    $("purposeBlock").style.display = "none";
-    $("btnSave").disabled = true;
+      "Press OFF if supported. Otherwise enter details below and click <b>Save</b> without OFF.";
+    $("stepState").textContent = "Optional";
+    $("footerHint").textContent =
+      "OFF is optional. Enter Device Name and click Save (or press OFF then Save).";
+
+    // Show purpose immediately after ON captured
+    $("purposeBlock").style.display = "";
+    // Save will be enabled by validateSaveEnabled()
+    validateSaveEnabled();
   }
+
   if (step === 3) {
-    toast("Step 3: Now enter Device Name And Room Number ", "", 3000);
-    $("stepTitle3").textContent = "Captured successfully";
+    toast("Step 3: Enter Device Name And Room Number", "", 3000);
+
+    $("stepTitle3").textContent = "Ready to Save";
     $("stepText").innerHTML =
-      "<b>SOS ON</b> and <b>SOS OFF</b> are recorded. Now enter Device Name (Purpose) and Save.";
+      "SOS <b>ON</b> recorded. SOS <b>OFF</b> is optional. Enter Device Name (Purpose) and Save.";
     $("stepState").textContent = "Ready";
     $("footerHint").textContent = "Enter Device Name (Purpose) and click Save.";
     $("purposeBlock").style.display = "";
-    $("btnSave").disabled = false;
+
+    validateSaveEnabled();
     dot.classList.add("ok");
   }
 }
@@ -202,7 +218,6 @@ function resetPopup() {
   $("offCode").textContent = "—";
 
   $("stepDotSosOn").style.display = "none";
-
   $("stepDotSosoff").style.display = "none";
 
   $("onMeta").textContent = "bits: — | proto: —";
@@ -222,6 +237,13 @@ function findExistingByAnyCode(codeStr) {
   return d ? Number(d.id) : 0;
 }
 
+// Enable Save when ON is captured + name entered (OFF optional)
+function validateSaveEnabled() {
+  const name = $("name").value.trim();
+  const canSave = !!capturedOn && !!name;
+  $("btnSave").disabled = !canSave;
+}
+
 async function startPolling() {
   // read current seq as baseline, so we only capture "new presses" after popup opens
   const rf = await apiGet(API.RF_LAST);
@@ -229,7 +251,6 @@ async function startPolling() {
   lastSeenSeq = baseSeq;
   logLine(`Popup baseline seq=${baseSeq}`);
 
-  // poll frequently
   pollTimer = setInterval(async () => {
     try {
       const d = await apiGet(API.RF_LAST);
@@ -239,7 +260,7 @@ async function startPolling() {
 
       lastSeenSeq = seq;
 
-      // Step 1: capture ON
+      // Step 1: capture ON (required)
       if (step === 1) {
         capturedOn = {
           code,
@@ -247,12 +268,11 @@ async function startPolling() {
           proto: Number(d.proto || 0),
         };
         $("onCode").textContent = code;
-
         $("stepDotSosOn").style.display = "inline-block";
-
         $(
           "onMeta"
         ).textContent = `bits: ${capturedOn.bits} | proto: ${capturedOn.proto}`;
+
         $("stepDot").classList.add("ok");
         $("stepState").textContent = "SOS ON recorded";
         toast("Success", "SOS ON is recorded.", 2200);
@@ -271,17 +291,19 @@ async function startPolling() {
           }
         }
 
+        // Move to OFF optional step, and show form
         step = 2;
         setStepUI();
         return;
       }
 
-      // Step 2: capture OFF (must be different from ON)
+      // Step 2: capture OFF (optional) — only if different from ON
       if (step === 2) {
         if (capturedOn && code === capturedOn.code) {
           logLine(`Ignored OFF capture because code == ON code (${code})`);
           return;
         }
+
         capturedOff = {
           code,
           bits: Number(d.bits || 0),
@@ -289,10 +311,10 @@ async function startPolling() {
         };
         $("offCode").textContent = code;
         $("stepDotSosoff").style.display = "inline-block";
-
         $(
           "offMeta"
         ).textContent = `bits: ${capturedOff.bits} | proto: ${capturedOff.proto}`;
+
         $("stepDot").classList.add("ok");
         $("stepState").textContent = "SOS OFF recorded";
         toast("Success", "SOS OFF is recorded.", 2200);
@@ -313,11 +335,30 @@ async function startPolling() {
           }
         }
 
-        step = 3; // now ask for purpose/name
+        // Go to step 3 (details) but OFF is already captured
+        step = 3;
         setStepUI();
+        return;
+      }
+
+      // Step 3: still allow OFF capture if not yet captured (optional convenience)
+      if (step === 3 && !capturedOff) {
+        if (capturedOn && code === capturedOn.code) return;
+
+        capturedOff = {
+          code,
+          bits: Number(d.bits || 0),
+          proto: Number(d.proto || 0),
+        };
+        $("offCode").textContent = code;
+        $("stepDotSosoff").style.display = "inline-block";
+        $(
+          "offMeta"
+        ).textContent = `bits: ${capturedOff.bits} | proto: ${capturedOff.proto}`;
+        toast("Captured", "SOS OFF captured (optional).", 2000);
+        logLine(`Captured OFF (late) code=${code} seq=${seq}`);
       }
     } catch (e) {
-      // avoid spamming toasts; log only
       logLine(`RF poll error: ${e.message}`);
     }
   }, 350);
@@ -329,7 +370,11 @@ function stopPolling() {
 }
 
 async function saveDevice() {
-  if (!capturedOn || !capturedOff) return;
+  // OFF is optional: only ON required
+  if (!capturedOn) {
+    toast("Missing", "Please capture SOS ON first.", 3500);
+    return;
+  }
 
   const name = $("name").value.trim();
   if (!name) {
@@ -346,9 +391,11 @@ async function saveDevice() {
     onCode: capturedOn.code,
     onBits: capturedOn.bits,
     onProto: capturedOn.proto,
-    offCode: capturedOff.code,
-    offBits: capturedOff.bits,
-    offProto: capturedOff.proto,
+
+    // OFF optional
+    offCode: capturedOff ? capturedOff.code : "",
+    offBits: capturedOff ? capturedOff.bits : 0,
+    offProto: capturedOff ? capturedOff.proto : 0,
   };
 
   try {
@@ -359,7 +406,7 @@ async function saveDevice() {
     toast("Saved", savedId ? `Saved device id=${savedId}` : "Saved", 2200);
     logLine(
       `Saved device (id=${savedId || "new"}) on=${payload.onCode} off=${
-        payload.offCode
+        payload.offCode || "(none)"
       }`
     );
 
@@ -368,7 +415,7 @@ async function saveDevice() {
   } catch (e) {
     toast("Save failed", e.message, 4500);
     logLine(`ERROR: ${e.message}`);
-    $("btnSave").disabled = false;
+    validateSaveEnabled();
   }
 }
 
@@ -396,9 +443,14 @@ $("btnClearLog").addEventListener("click", () => ($("log").textContent = "—"))
 $("btnReset").addEventListener("click", resetPopup);
 $("btnSave").addEventListener("click", saveDevice);
 
+// Enable/disable Save as user types name (OFF optional)
+$("name").addEventListener("input", validateSaveEnabled);
+$("roomId").addEventListener("input", validateSaveEnabled);
+
 // Init
 loadDevices();
 
+// Auto-refresh table when RF seq changes (your existing logic kept)
 let lastRfSeq = -1;
 let refreshInFlight = false;
 

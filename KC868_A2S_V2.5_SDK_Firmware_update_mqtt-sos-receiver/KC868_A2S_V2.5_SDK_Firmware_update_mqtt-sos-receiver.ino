@@ -40,7 +40,7 @@ const unsigned long interval = 24UL * 60UL * 60UL * 1000UL;  // 24 hours in mill
 //partition
 String serverURL = "";
 String todayDate = "";
-String default_device_serial_number = "XTSOS251000";  //PARKING Device
+String default_device_serial_number = "XTSOS251001";  //PARKING Device
 String device_serial_number = "";
 bool USE_ETHERNET = true;
 bool USE_DEFAULT_WIFIMANGER = false;
