@@ -12,7 +12,7 @@
 // MQTT Broker
 const char* mqtt_server = "broker.hivemq.com";
 int mqtt_port = 1883;
-String clientId = "xtremevision";
+String clientId = "xtremesosdevice";
 
 // Device unique ID (serial number)
 // const char* device_serial = "XT123456";
@@ -26,10 +26,16 @@ String MqttTopic_SOSalarm = "";      //clientId + "/" + device_serial_number + "
 // std::string topic_heartbeat_str = std::string("device/") + std::string(device_serial_number.c_str()) + "/heartbeat";
 
 // const char* topic_heartbeat = topic_heartbeat_str.c_str();
+unsigned long mqttDisconnectedSince = 0;
+const unsigned long mqttRestartTimeout = 1000*60*5;  // 1 minute
+
 
 WiFiClient espClient;
 PubSubClient mqttclient(espClient);
 StaticJsonDocument<256> mqttconfig;
+
+unsigned long lastMqttReconnectAttempt = 0;
+const unsigned long mqttReconnectInterval = 5000;  // 5 seconds
 
 // std::string topic_heartbeat_str = std::string("device/") + String(device_serial_number) + "/heartbeat";
 // const char* topic_heartbeat = topic_heartbeat_str.c_str();
@@ -110,6 +116,8 @@ void publishConfigToMQTT() {
 #endif
   } else {
     Serial.println("❌ MQTT publish failed");
+
+    connectToMQTT();
     // Serial.println("Possible reasons:");
     // Serial.println("- MQTT not connected");
     // Serial.println("- Payload too large (" + String(payload.length()) + " bytes)");
@@ -157,8 +165,7 @@ void updateConfigThrougMqtt(String message) {
       }
     }
 
-      publishConfigToMQTT();
-
+    publishConfigToMQTT();
   }
 
 
@@ -167,38 +174,53 @@ void updateConfigThrougMqtt(String message) {
 
 
 void connectToMQTT() {
+  if (mqttclient.connected()) return;
 
-    
+  unsigned long now = millis();
+  if (now - lastMqttReconnectAttempt < mqttReconnectInterval) {
+    return;  // wait before retry
+  }
+  lastMqttReconnectAttempt = now;
+
   mqttclient.setServer(mqtt_server, mqtt_port);
   mqttclient.setCallback(MqttCallback);
-  if (!mqttclient.connected()) {
-    //String clientId = String(device_serial_number);
-    clientId = clientId + "-" + device_serial_number;
-    if (mqttclient.connect(clientId.c_str())) {
-      Serial.println("MQTT connected");
-      mqttclient.setBufferSize(3000);  // Must be ≥ your max payload
-      mqttclient.subscribe(MqttTopic_sub.c_str());
-      Serial.println("Subscribed to: " + MqttTopic_sub);
 
-      updateJsonConfig("config.json", "mqtt", "online");
+  String connectId = clientId + "-" + device_serial_number;
 
-      publishConfigToMQTT();
+  Serial.print("Attempting MQTT connection... ");
+
+  if (mqttclient.connect(connectId.c_str()))
+
+ 
 
 
+  {
+    Serial.println("CONNECTED");
+    mqttDisconnectedSince = 0;  // reset timer
 
-    } else {
+    mqttclient.subscribe(MqttTopic_sub.c_str());
+    Serial.println("Subscribed: " + MqttTopic_sub);
 
-      Serial.print(mqtt_server);
-      Serial.print(":");
+    updateJsonConfig("config.json", "mqtt", "online");
+    publishConfigToMQTT();
 
-      Serial.print(mqtt_port);
+  } else {
+    Serial.print("FAILED, rc=");
+    Serial.print(mqttclient.state());
+    Serial.println(" → retrying in 5s");
 
+    updateJsonConfig("config.json", "mqtt", "offline");
 
-      Serial.print("MQTT connect failed. State: ");
-      Serial.println(mqttclient.state());
+    digitalWrite(RELAY1_NETWORK_STATUS_PIN, LOW);
+    // Start disconnect timer (only once)
+    if (mqttDisconnectedSince == 0) {
+      mqttDisconnectedSince = now;
+    }
 
-      updateJsonConfig("config.json", "mqtt", "offline");
-       delay(200);
+    if (now - mqttDisconnectedSince >= mqttRestartTimeout) {
+      Serial.println("MQTT disconnected > 1 minute. Restarting device...");
+      delay(200);
+      ESP.restart();
     }
   }
 }

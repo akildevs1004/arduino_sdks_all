@@ -325,7 +325,7 @@ void handleSubmitCommunication() {
 
 
 
-  doc["mqtt_communication"] = server.hasArg("mqtt_communication");
+  doc["mqtt_communication"] =true; //server.hasArg("mqtt_communication");
   doc["mqtt_server"] = server.arg("mqtt_server");
   doc["mqtt_port"] = server.arg("mqtt_port");
   doc["mqtt_clientId"] = server.arg("mqtt_clientId");

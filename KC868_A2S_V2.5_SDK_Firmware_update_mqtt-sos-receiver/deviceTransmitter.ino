@@ -30,9 +30,11 @@
 // static const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
 
 // KC868-A2 pins
-static const uint8_t RF_RX_PIN = 33;         // GPIO-1 terminal = GPIO33
+static const uint8_t RF_RX_PIN = 5;// 5 for SLOT 1 ,33 for Default;                  // GPIO-1 terminal = GPIO33
+static const uint8_t RF_RX_PIN2 = 33;// 5 for SLOT 1 ,33 for Default;                  // GPIO-1 terminal = GPIO33
+
 static const uint8_t RELAY1_NETWORK_STATUS_PIN = 15;  // Relay1 = GPIO15
-static const uint8_t RELAY2_LIGHT_PIN = 2;   // Relay1 = GPIO15
+static const uint8_t RELAY2_ALARM_LIGHT_PIN = 2;      // Relay1 = GPIO15
 
 
 
@@ -75,7 +77,7 @@ static unsigned long alarmUntil = 0;
 // Config document
 static DynamicJsonDocument configDoc(CFG_SIZE);
 
-bool firstLoad=true;
+bool firstLoad = true;
 
 // ---------- Helpers ----------
 static void addCorsHeaders() {
@@ -463,17 +465,17 @@ void setupSosApiRoutes_TwoButtons() {
   // pinMode(RELAY1_SIREN_PIN, OUTPUT);
   // digitalWrite(RELAY1_SIREN_PIN, LOW);
 
-    pinMode(RELAY1_NETWORK_STATUS_PIN, OUTPUT);
+  pinMode(RELAY1_NETWORK_STATUS_PIN, OUTPUT);
   digitalWrite(RELAY1_NETWORK_STATUS_PIN, LOW);
 
- delay(300);
-  digitalWrite(RELAY1_NETWORK_STATUS_PIN, HIGH);
-  
- delay(300);
+  delay(300);
   digitalWrite(RELAY1_NETWORK_STATUS_PIN, HIGH);
 
-  pinMode(RELAY2_LIGHT_PIN, OUTPUT);
-  digitalWrite(RELAY2_LIGHT_PIN, LOW);
+  delay(300);
+  digitalWrite(RELAY1_NETWORK_STATUS_PIN, HIGH);
+
+  pinMode(RELAY2_ALARM_LIGHT_PIN, OUTPUT);
+  digitalWrite(RELAY2_ALARM_LIGHT_PIN, LOW);
 
   // Load config
   loadConfig();
@@ -491,6 +493,13 @@ void setupSosApiRoutes_TwoButtons() {
   // RF receiver always on
   rf.enableReceive(digitalPinToInterrupt(RF_RX_PIN));
   Serial.println("RF receiver enabled on GPIO33");
+
+
+  // RF receiver always on
+  rf.enableReceive(digitalPinToInterrupt(RF_RX_PIN2));
+  Serial.println("RF receiver enabled on GPIO3322222 A");
+
+  
 
   // Routes + server
   setupRoutes();
@@ -524,7 +533,7 @@ void loopSosDevice() {
 
   Serial.println(now - lastAt);
 
-   
+
 
   if (code == lastCode && (now - lastAt) < DUP_IGNORE_MS) return;
   lastCode = code;
@@ -550,7 +559,7 @@ void loopSosDevice() {
   // Apply to status/relay if matches known devices
   applyRfToDevicesAndRelay(code, bits, proto, pulse);
 
-  firstLoad=false;
+  firstLoad = false;
 }
 
 
@@ -585,19 +594,19 @@ void loopSosDevice() {
 static void publishSosEvent(JsonObject d, const char* newStatus) {
 
   if (strcmp(newStatus, "ON") == 0)
-    digitalWrite(RELAY2_LIGHT_PIN, HIGH);
+    digitalWrite(RELAY2_ALARM_LIGHT_PIN, HIGH);
 
   else if (strcmp(newStatus, "OFF") == 0)
-    digitalWrite(RELAY2_LIGHT_PIN, LOW);
+    digitalWrite(RELAY2_ALARM_LIGHT_PIN, LOW);
 
-  updateSOSLightStatus();
+  
 
 
 
 
   if (!configDoc.containsKey("mqtt_communication") || !(configDoc["mqtt_communication"] | false)) {
     Serial.println("MQTT disabled");
-    return;
+    //return;
   }
 
   DynamicJsonDocument payload(512);
@@ -616,6 +625,8 @@ static void publishSosEvent(JsonObject d, const char* newStatus) {
   mqttSOSAlarmNotification(out);  // your existing publisher
   Serial.print("MQTT SOS payload: ");
   Serial.println(out);
+delay(200);
+  updateSOSLightStatus();
 }
 
 static void applyRfToDevicesAndRelay(uint32_t code, uint16_t bits, uint8_t proto, uint16_t pulse) {
@@ -631,7 +642,7 @@ static void applyRfToDevicesAndRelay(uint32_t code, uint16_t bits, uint8_t proto
       String prev = String((const char*)(d["status"] | "OFF"));
       relayOn();
 
-       // if (prev != "ON" || firstLoad)
+      // if (prev != "ON" || firstLoad)
       {
         d["status"] = "ON";
         d["lastSeen"] = (uint32_t)millis();
@@ -646,7 +657,7 @@ static void applyRfToDevicesAndRelay(uint32_t code, uint16_t bits, uint8_t proto
       String prev = String((const char*)(d["status"] | "OFF"));
       relayOff();
 
-     //  if (prev != "OFF" || firstLoad)
+      //  if (prev != "OFF" || firstLoad)
       {
         d["status"] = "OFF";
         d["lastSeen"] = (uint32_t)millis();
@@ -661,4 +672,25 @@ static void applyRfToDevicesAndRelay(uint32_t code, uint16_t bits, uint8_t proto
 }
 
 void updateSOSLightStatus() {
+
+  JsonArray rooms = configDoc["sos_devices"].as<JsonArray>();
+
+  bool anyOn = false;
+
+  for (JsonObject room : rooms) {
+    const char* status = room["status"] | "OFF";
+
+     
+
+    if (strcmp(status, "ON") == 0) {
+      anyOn = true;
+      break;  // no need to check further
+    }
+  }
+
+  // Turn ON if any room alarm is ON
+  // Turn OFF only if all rooms are OFF
+  digitalWrite(
+    RELAY2_ALARM_LIGHT_PIN,
+    anyOn ? HIGH : LOW);
 }
