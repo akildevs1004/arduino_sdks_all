@@ -1,0 +1,444 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  line-height: 1.6;
+}
+form {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  /*max-width: 400px;*/ 
+}.form {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  /*max-width: 400px;*/ 
+}
+input[type="text"], input[type="password"] {
+  width: 100%;
+  /* padding: 8px; */
+  margin: 5px 0 15px 0;
+  box-sizing: border-box;
+}
+input[type="submit"] {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+
+
+
+
+
+
+ body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header {
+      background-color: #1c3b50;
+      color: white;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header img {
+      height: 40px;
+    }
+
+    .header .time {
+      font-size: 20px;
+    }
+
+    .container {
+      margin: 20px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin: 0 0 20px;
+    }
+
+    .filter {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .filter select,
+    .filter input[type="date"] {
+      padding: 5px;
+      font-size: 16px;
+    }
+
+    .filter .date-range {
+      display: flex;
+      align-items: center;
+    }
+
+    .filter .date-range input {
+      margin-left: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table,
+    th,
+    td {
+      /* border: 1px solid #ddd; */
+    }
+
+    th,
+    td {
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .pagination select {
+      padding: 5px;
+      font-size: 16px;
+    }
+
+/* -----------Upload Firmware css */
+ 
+    .progress-container {
+      width: 100%;
+      background-color: #f3f3f3;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 30px;
+      background-color: #4caf50;
+      color: white;
+      text-align: center;
+      line-height: 30px;
+      border-radius: 5px;
+      transition: width 0.3s;
+    }
+
+    .btn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+
+    #status {
+      margin-top: 15px;
+    }
+/* -----------Upload HTML css */
+    #progressBar {
+      width: 100%;
+        background-color: #f3f3f3; 
+    }
+
+    #progressBar div {
+      height: 30px;
+      width: 0;
+      background-color: #4caf50;
+      text-align: center;
+      line-height: 30px;
+      color: white;
+    }
+
+
+ 
+  input ,
+  select {
+    width: 200px;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    outline: none;
+    background-color: #f9f9f9;
+  }
+
+  input:not([type="checkbox"]):focus,
+  select:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+    background-color: #fff;
+  }
+
+  input[type="submit"] {
+    padding: 10px 20px;
+    border: none;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+  }
+
+  input[type="submit"]:hover {
+    background-color: #45a049;
+  }
+ 
+
+  .card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background: #fff;
+  }
+
+  .card-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #97d473;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-group label {
+    display: inline-block;
+    width: 200px;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 200px;
+  }
+
+   .form1 input[type="checkbox"]{
+    height: 20px;
+    padding: 10px;
+   }
+
+   input[type="text"]:disabled {
+    background-color: #cdcdcd; /* Change to your preferred color */
+    border: 1px solid #ccc;    /* Optional: Change the border color if you like */
+  }
+  
+  input[type="number"]:disabled {
+    background-color: #cdcdcd; /* Change to your preferred color */
+    border: 1px solid #ccc;    /* Optional: Change the border color if you like */
+  }
+ 
+            .tab {
+                overflow: hidden;
+                border: 1px solid #ccc;
+                background-color: #f1f1f1;
+            }
+
+             
+            .tab button {
+                background-color: inherit;
+                float: left;
+                border: none;
+                outline: none;
+                cursor: pointer;
+                padding: 14px 16px;
+                transition: 0.3s;
+                font-size: 17px;
+            }
+
+            
+            .tab button:hover {
+                background-color: #ddd;
+            }
+
+           
+            .tab button.active {
+                background-color: #ccc;
+            }
+
+            /* Style the tab content */
+            .tabcontent {
+                display: none1;
+                padding: 6px 12px;
+                /* border: 1px solid #ccc; */
+                border-top: none;
+            }
+
+
+            /* -------------------------------Communication CSS ----------------------- */
+
+ 
+  /* ===== Black theme page ===== */
+  body { background:#0b0f14; color:#e6eef8; }
+
+  .container1{
+    /* width: min(1200px, 96%); */
+    /* margin: 24px auto; */
+  }
+
+  /* Remove old grey wrapper look */
+  .tabcontent > div{ background: transparent !important; }
+  .form1{ background: transparent !important; }
+
+  /* Remove table grid borders/spaces */
+  table{ border-collapse: separate; border-spacing: 0 16px; width:100%; }
+  table td{ border: none !important; padding: 0 !important; }
+
+  /* ===== Card ===== */
+  .card{
+    background: linear-gradient(180deg,#121a25,#0e141d);
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.55);
+    padding: 18px 20px;
+  }
+
+  .card-title{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,.10);
+    margin-bottom: 14px;
+    font-weight: 700;
+    letter-spacing: .2px;
+    color:#97d473; /* MQTT red title like your screenshot */
+  }
+
+  /* ===== Checkbox style (keep your <input type=checkbox>) ===== */
+  /* Hide default checkbox but keep it clickable through label */
+  #mqtt_communication{
+    appearance: none;
+    -webkit-appearance: none;
+    width: 44px;
+    height: 26px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(255,255,255,.06);
+    position: relative;
+    cursor: pointer;
+    outline: none;
+    vertical-align: middle;
+  }
+
+  #mqtt_communication::after{
+    content:"";
+    position:absolute;
+    top: 2px;
+    left: 2px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.85);
+    transition: .18s ease;
+  }
+
+  #mqtt_communication:checked{
+    background: #38b24a;
+    border-color: rgba(0,0,0,.25);
+  }
+
+  #mqtt_communication:checked::after{
+    transform: translateX(18px);
+    background: rgba(0,0,0,.20);
+  }
+
+  #mqtt_communication:focus{
+    box-shadow: 0 0 0 4px rgba(56,178,74,.25);
+  }
+
+  /* ===== MQTT fields layout ===== */
+  #mqtt_settings table{
+    width: 100%;
+    border-spacing: 0 14px;
+  }
+
+  #mqtt_settings td:first-child{
+    width: 220px;
+    color: rgba(230,238,248,.75);
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  #mqtt_settings input{
+    width: min(360px, 100%);
+    height: 40px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.04);
+    color: #e6eef8;
+    outline: none;
+  }
+
+  #mqtt_settings input:focus{
+    border-color: rgba(56,178,74,.60);
+    box-shadow: 0 0 0 4px rgba(56,178,74,.20);
+  }
+
+  /* ===== Submit button ===== */
+  input[type="submit"]{
+    width: min(980px, 92%);
+    height: 48px;
+    border: 0;
+    border-radius: 10px;
+    font-weight: 800;
+    letter-spacing: .3px;
+    cursor: pointer;
+    background: #38b24a;
+    color: #ffffff;
+    display: block;
+    margin: 0 auto;
+  }
+
+  input[type="submit"]:active{
+    transform: translateY(1px);
+  }
+ 
+/* -------------------------------Tabs Header CSS ----------------------- */
+

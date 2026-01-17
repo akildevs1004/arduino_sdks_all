@@ -1,0 +1,144 @@
+<div class=container1>
+    <div style=text-align:center;font-weight:700;display:none>
+        <span style=width:70%;text-align:center>
+            <span style=color:green>{GlobalWebsiteResponseMessage}
+            </span>
+            <span style=color:red>{GlobalWebsiteErrorMessage}
+            </span>
+        </span>
+    </div>
+    <div>
+
+        <div class=tabcontent>
+            <form action=/submit-form1 class=form1 onsubmit="return verifyform()" method=POST
+                style=background-color:#ddd>
+                <table>
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Network Settings</div>
+                                <table>
+                                    <tr>
+                                        <td style=width:500px><label for=connectionType>Active Connection Type</label>
+                                        <td><select style=width:226px onchange="toggleConnectionFields()"
+                                                id=wifi_or_ethernet name=wifi_or_ethernet style=width:200px>
+                                                <option value=1>WiFi
+                                                <option value=0>Ethernet
+                                            </select>
+                                    <tr id=wifiFields>
+                                        <td><label for=wifiSsid>Wifi SSID Name:</label>
+                                        <td><!--<input id=wifi_ssid name=wifi_ssid style=width:200px value={wifi_ssid}>-->
+                                            <select id="wifi_ssid" name=wifi_ssid style=width:226px></select>
+                                            <button type=button onclick="scanWiFi()">🔍 Scan WiFi</button><span
+                                                id=wifiloading></span>
+                                            <!--<button onclick="saveWiFi()">💾 Save WiFi</button>-->
+
+                                    <tr id=wifiPasswordField>
+                                        <td><label for=wifiPass>Wifi Password:</label>
+                                        <td><input id=wifi_password name=wifi_password style=width:200px
+                                                value={wifi_password}>
+                                    <tr id=wifiIpField>
+                                        <td><label for=wifiIp>WiFi IP:</label>
+                                        <td><input id=wifi_ip name=wifi_ip style=width:200px value={wifi_ip}>
+                                    <tr id=wifigateway>
+                                        <td><label for=ethGateway>Wifi Gateway:</label>
+                                        <td><input id=wifi_gateway name=wifi_gateway style=width:200px readonly
+                                                value={wifi_gateway}>
+                                    <tr id=wifiEthernet>
+                                        <td><label for=ethSubnet>Wifi Subnet:</label>
+                                        <td><input id=wifi_subnet name=wifi_subnet style=width:200px readonly
+                                                value={wifi_subnet}>
+
+                                    <tr id=ethernetFields style=display:none1>
+                                        <td style=width:500px><label for=ethIp>Ethernet IP:</label>
+                                        <td><input id=eth_ip name=eth_ip style=width:200px value={eth_ip}>
+                                    <tr id=ethGatewayField style=display:none1>
+                                        <td><label for=ethGateway>Ethernet Gateway:</label>
+                                        <td><input id=eth_gateway name=eth_gateway style=width:200px
+                                                value={eth_gateway}>
+                                    <tr id=ethSubnetField style=display:none1>
+                                        <td><label for=ethSubnet>Ethernet Subnet:</label>
+                                        <td><input id=eth_subnet name=eth_subnet style=width:200px value={eth_subnet}>
+                                </table>
+                            </div>
+
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Device Info</div>
+                                <table>
+                                    <tr>
+                                        <td style=width:500px><label for=wifiIp>Device Serial Number:</label>
+                                        <td><input id=device_serial_number name=device_serial_number
+                                                style=width:200px;font-weight:700;background:#000000;color:#FFF;
+                                                value={device_serial_number}>
+                                </table>
+                            </div>
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Server Settings</div>
+                                <table>
+                                    <tr>
+                                        <td style=width:500px><label for=serverURL>Reset Config Hold
+                                                Duration(Seconds):</label>
+                                        <td><select id=reset_settings_duration name=reset_settings_duration
+                                                style=width:200px value={reset_settings_duration}>
+
+
+                                    <tr>
+                                        <td><label for=serverURL1>Heartbeat Interval(Seconds):</label>
+                                        <td><select id=heartbeat name=heartbeat style=width:200px
+                                                value={heartbeat}></select>
+
+
+
+                                </table>
+                            </div>
+
+                    <tr>
+                        <td>
+                            <div class=card>
+                                <div class=card-title>Siren Settings</div>
+                                <table>
+                                    <tr>
+                                        <td style=width:500px><label for=siren_checkbox>Siren Sound:</label>
+                                        <td><label for=siren_checkbox
+                                                style=cursor:pointer;display:inline-block;width:200px title=SMS><input
+                                                    id=siren_checkbox name=siren_checkbox style=width:30px value=1
+                                                    type=checkbox
+                                                    onclick='toggleInput("siren_checkbox","max_siren_play"),toggleInput("siren_checkbox","max_siren_pause")'>
+                                                Enable</label>
+                                    <tr>
+                                        <td><label for=max_siren_play>Siren Play(Seconds) :</label>
+                                        <td><select id=max_siren_play name=max_siren_play style=width:200px
+                                                value={max_siren_play} disabled></select>
+                                    <tr>
+                                        <td style=width:500px><label for=max_siren_pause>Siren Pause Time(Minutes)
+                                                :</label>
+                                        <td><select id=max_siren_pause name=max_siren_pause style=width:200px
+                                                value={max_siren_pause} disabled></select>
+                                    <tr>
+                                        <td>
+                                        <td><input style="width:200px;float: left;" value="Update Settings" type=submit>
+                                </table>
+
+                                <div style="color:red">Note: New IP and Serial Numbers effective after Restart the
+                                    Device. <a href='/restart'>Restart</a> </div>
+                            </div>
+                </table>
+            </form>
+        </div>
+        <script>
+
+            document.addEventListener("DOMContentLoaded", () => {
+                setTimeout(() => {
+                    setActiveTab(document.getElementById("form1tab"));
+                }, 1000);
+            });
+
+        </script>
+        <script>//function openTabContent(e, t) { var n, a, l; for (a = document.getElementsByClassName("tabcontent"), n = 0; n < a.length; n++)a[n].style.display = "none"; for (l = document.getElementsByClassName("tablinks"), n = 0; n < l.length; n++)l[n].className = l[n].className.replace(" active", ""); document.getElementById(t).style.display = "block", e.currentTarget.className += " active" } document.getElementById("defaultOpen").click()</script>
+    </div>
+</div>
+<script src="/script.js"></script>

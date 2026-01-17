@@ -1,0 +1,163 @@
+<link rel="stylesheet" href="/sos.css">
+<div class="container1">
+    <div class="tabcontent" id="tab2">
+        <div style="width:100%; background-color:transparent" class="form">
+            <div class="wrap">
+                <div class="topbar">
+                    <div class="title">
+                        <h1 style="color:#97d473">SOS Devices</h1>
+
+                    </div>
+                    <div class="actions">
+                        <div class="hint"><span id="count">0</span> Devices</div>
+                        <span class="pill" style="display: none;"><span id="connDot" class="dot"></span><span
+                                id="connText">Checking…</span></span>
+                        <button id="btnReload" class="primary">Reload</button>
+                        <button id="btnOpen" class="primary">Add Device</button>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="grid111">
+                <section class="card">
+
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th style="width:55px;">ID</th>
+                                <th>Name</th>
+                                <th style=" ">Room</th>
+                                <th style=" ">ON Code</th>
+                                <th style=" ">OFF Code</th>
+                                <th style=" ">Status</th>
+                                <th style=" ">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody">
+                            <tr>
+                                <td colspan="7" class="hint">Loading…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <aside class="card" style="display:none">
+                    <div class="cardHead">
+                        <div>
+                            <h2>Activity</h2>
+                            <div class="hint">UI log</div>
+                        </div>
+                        <button id="btnClearLog">Clear</button>
+                    </div>
+                    <div id="log" class="log">—</div>
+                </aside>
+            </div>
+
+            <!-- Modal -->
+            <div id="modalBack" class="modalBack">
+                <div class="modal" role="dialog" aria-modal="true">
+                    <div class="modalHeader">
+                        <div>
+                            <strong>Add New Device</strong>
+                            <!-- <div class="sub">
+                                Scanning is already running in device <span class="mono">loop()</span>.
+                                This popup will automatically capture the next received RF code for each step.
+                            </div> -->
+                        </div>
+                        <button id="btnClose" style="color:red" class="small">Close(X)</button>
+                    </div>
+
+                    <div class="modalBody">
+                        <div class="stepCard">
+                            <div class="stepTop">
+                                <div class="msg">
+                                    <div style="font-weight: bold;" id="stepTitle">Step 1: Press SOS ON button </div>
+
+                                    <div style="font-weight: bold;" id="stepTitle2"> </div>
+                                    <div style="font-weight: bold;" id="stepTitle3"> </div>
+                                    <div id="stepText">Waiting for a new RF code… once received, it will be recorded as
+                                        <b>SOS
+                                            ON</b>.
+                                    </div>
+                                </div>
+                                <div class="statusPill">
+                                    <span id="stepDot" class="dot"></span>
+                                    <span id="stepState">Waiting</span>
+                                </div>
+                            </div>
+
+                            <div class="codeRow">
+                                <div class="codeBox">
+                                    <div class="lbl">SOS ON <span id="stepDotSosOn" class="dot ok">
+                                        </span>
+                                    </div>
+                                    <div class="code" id="onCode">—</div>
+
+
+                                    <div class="meta" style="display:none" id="onMeta">bits: — | proto: —</div>
+                                </div>
+                                <div class="codeBox">
+                                    <div class="lbl">SOS OFF <span id="stepDotSosoff" class="dot ok"> </span>
+                                    </div>
+                                    <div class="code" id="offCode">—</div>
+
+
+                                    <div class="meta" style="display:none" id="offMeta">bits: — | proto: —</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Show these ONLY after OFF captured -->
+                        <div id="purposeBlock" class="stepCard" style="display:none;">
+                            <div class="msg">
+                                <b>Enter Device Name </b>
+                                <div class="hint" style="display:none;">Example: “Room 1 SOS”, “Toilet SOS”, “Nurse Call
+                                    Room 12”</div>
+                            </div>
+
+                            <div class="formRow">
+                                <label>Device Name</label>
+                                <input id="name" style="color:black!important" placeholder="Purpose / Device name" />
+                            </div>
+
+                            <div class="formRow">
+                                <label>Room ID</label>
+                                <input id="roomId" style="color:black!important" type="number" min="0"
+                                    placeholder="1" />
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="modalFooter">
+                        <div style="color:green" class="hint" id="footerHint" style="display:none;">
+                            <!-- Step 1 is active: press SOS ON button. -->
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <button id="btnReset" class="small">Reset</button>
+                            <button id="btnSave" class="success" disabled style="background-color: green;">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="toast" class="toast">
+                <strong id="toastTitle">Info</strong>
+                <div id="toastMsg" class="msg"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+
+    document.addEventListener("DOMContentLoaded", () => {
+        setTimeout(() => {
+            setActiveTab(document.getElementById("sostab"));
+        }, 1000);
+    });
+
+</script>
+<script src="sos.js"></script>

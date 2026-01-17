@@ -1,0 +1,66 @@
+<div class="container">
+
+  <span style="width:30%;text-align:left;float:left">
+    <h1> Upload Html Files</h1>
+  </span>
+  <br />
+
+
+
+  <form id="uploadForm" method="POST" enctype="multipart/form-data">
+    <input type="file" name="upload" accept=".html" id="fileInput" />
+    <button type='submit' class="btn" value="">Upload Html File</button>
+  </form>
+
+  <div class='progress-container'>
+    <div id='progressBar' class='progress-bar'>0%</div>
+  </div>
+  <div id='status'></div>
+  <a href='/restart'>Restart</a>
+</div>
+<script>
+  document.getElementById("uploadForm").onsubmit = function (event) {
+    event.preventDefault();
+    var formData = new FormData();
+    var file = document.getElementById("fileInput").files[0];
+    formData.append("upload", file);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/uploadhtmlfiles", true);
+
+    xhr.upload.onprogress = function (event) {
+      if (event.lengthComputable) {
+        var percent = (event.loaded / event.total) * 100;
+        document.getElementById("progressBar").style.width = percent + "%";
+        document.getElementById("progressBar").textContent = Math.round(percent) + "%";
+        document.getElementById('progressBar').style.backgroundColor = "#4caf50";
+        document.getElementById('status').innerHTML = 'Uploading: ' + percent + '%';
+
+      }
+    };
+    xhr.onload = function () {
+      if (xhr.status == 200) {
+        document.getElementById('status').innerHTML = 'Update completed! Device will Re-Start automatically.................';
+        // Reload the page after 10 seconds
+        setTimeout(function () {
+          location.reload();
+        }, 1000 * 5); // 10,000 ms = 10 seconds
+      } else {
+        document.getElementById('status').innerHTML = 'Error: ' + xhr.responseText;
+      }
+    };
+    xhr.send(formData);
+    // xhr.onload = function () {
+    //   if (xhr.status == 200) {
+    //     alert("File uploaded successfully!");
+    //   } else {
+    //     alert("File upload failed!");
+    //   }
+    // };
+
+    // xhr.send(formData);
+  };
+</script>
+</body>
+
+</html>
