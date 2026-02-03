@@ -123,11 +123,11 @@ void networkLoop() {
 
     checkInternetConnection();
 
-    if (!hasInternet || config["mqtt"] == "offline") {
-      Serial.println("🔁 Restarting due to no internet...");
-      delay(2000);
-      ESP.restart();
-    }
+    // if (!hasInternet || config["mqtt"] == "offline") {
+    //   Serial.println("🔁 Restarting due to no internet...");
+    //   delay(2000);
+    //   ESP.restart();
+    // }
   }
 }
 void networkStatusLoop() {
@@ -679,6 +679,8 @@ void checkInternetConnection() {
   //   hasInternet = false;
   //   return;
   // }
+ updateJsonConfig("config.json", "internet", "offline");
+  return ;
 
   HTTPClient http;
   http.setConnectTimeout(3000);

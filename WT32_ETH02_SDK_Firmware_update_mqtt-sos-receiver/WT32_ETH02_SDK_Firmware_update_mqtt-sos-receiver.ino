@@ -40,7 +40,7 @@ const unsigned long interval = 24UL * 60UL * 60UL * 1000UL;  // 24 hours in mill
 //partition
 String serverURL = "";
 String todayDate = "";
-String default_device_serial_number = "XTSOS251001";  //PARKING Device
+String default_device_serial_number = "XTSOS251005";  //SOS Device
 String device_serial_number = "";
 bool USE_ETHERNET = true;
 bool USE_DEFAULT_WIFIMANGER = false;
@@ -118,7 +118,7 @@ void loop() {
     // Serial.println("Loop Started...............");
     // server.handleClient();
 
-    // networkLoop();
+      networkLoop();
 
     // updateFirmWareLoop();
      loopSosDevice();

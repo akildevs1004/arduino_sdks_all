@@ -504,7 +504,9 @@ void setupSosApiRoutes_TwoButtons() {
   // RF receiver always on
   // rf.enableReceive(digitalPinToInterrupt(RF_RX_PIN2));
   // Serial.println("RF receiver enabled on GPIO3322222 A");
-
+setupRoutes();
+  server.begin();
+  Serial.println("HTTP server started on port 80");
  
 }
 
