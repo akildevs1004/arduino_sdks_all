@@ -1,0 +1,314 @@
+*************************** START ****************************
+START TIME: 202510201137
+CONNECT BAUD: 115200
+set state: ESP_DL_SYNC
+serial port opened
+-----------
+baud:115200
+root baud:115200
+-------------
+===============BAUD : 115200===============CALL DEVICE SYNC
+connecting...
+chip sync ok
+mac l: 0x5c44a324
+mac h: 0xd11433
+crc_cal: 209
+crc_read: 209
+crc_test: 0
+ESP32 MAC CRC OK
+get mac res: 1
+get flash id : 0x0016405e
+manufacturer_id: 0x5e
+device_id: 0x4016
+Wrote 4194304 bytes (821968 compressed) at 0x00000000 in 72.5 seconds (effective 462.9 kbit/s)...
+Hash of data verified.Wrote 1441792 bytes (28463 compressed) at 0x003d0000 in 8.2 seconds (effective 1415.0 kbit/s)...
+Hash of data verified.
+Leaving...
+com closed
+Use time: 97 s
+Download result: PASS
+*************************** END ****************************
+
+*************************** START ****************************
+START TIME: 202510201146
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201146
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201146
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201146
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201146
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201146
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201146
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201146
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201146
+CONNECT BAUD: 115200
+set state: ESP_DL_SYNC
+serial port opened
+-----------
+baud:115200
+root baud:115200
+-------------
+===============BAUD : 115200===============CALL DEVICE SYNC
+connecting...
+chip sync ok
+mac l: 0x5c44a324
+mac h: 0xd11433
+crc_cal: 209
+crc_read: 209
+crc_test: 0
+ESP32 MAC CRC OK
+get mac res: 1
+get flash id : 0x0016405e
+manufacturer_id: 0x5e
+device_id: 0x4016
+Wrote 4194304 bytes (821968 compressed) at 0x00000000 in 72.5 seconds (effective 462.7 kbit/s)...
+Hash of data verified.Wrote 1441792 bytes (28463 compressed) at 0x00290000 in 8.4 seconds (effective 1366.9 kbit/s)...
+Hash of data verified.
+Leaving...
+com closed
+Use time: 97 s
+Download result: PASS
+*************************** END ****************************
+
+*************************** START ****************************
+START TIME: 202510201200
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201200
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201200
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+set STOP FLG: True===============BAUD : 115200===============set state: ESP_DL_STOP
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+*************************** START ****************************
+START TIME: 202510201201
+CONNECT BAUD: 115200
+set state: ESP_DL_SYNC
+serial port opened
+-----------
+baud:115200
+root baud:115200
+-------------
+===============BAUD : 115200===============CALL DEVICE SYNC
+connecting...
+chip sync ok
+mac l: 0x5c44a324
+mac h: 0xd11433
+crc_cal: 209
+crc_read: 209
+crc_test: 0
+ESP32 MAC CRC OK
+get mac res: 1
+get flash id : 0x0016405e
+manufacturer_id: 0x5e
+device_id: 0x4016
+Wrote 4194304 bytes (821968 compressed) at 0x00000000 in 72.6 seconds (effective 462.2 kbit/s)...
+Hash of data verified.Wrote 1441792 bytes (28463 compressed) at 0x00290000 in 8.4 seconds (effective 1370.1 kbit/s)...
+Hash of data verified.
+Leaving...
+com closed
+Use time: 97 s
+Download result: PASS
+*************************** END ****************************
+
+*************************** START ****************************
+START TIME: 202510201210
+CONNECT BAUD: 115200
+set state: ESP_DL_SYNC
+serial port opened
+-----------
+baud:115200
+root baud:115200
+-------------
+===============BAUD : 115200===============CALL DEVICE SYNC
+connecting...
+chip sync ok
+mac l: 0x5c44a324
+mac h: 0xd11433
+crc_cal: 209
+crc_read: 209
+crc_test: 0
+ESP32 MAC CRC OK
+get mac res: 1
+get flash id : 0x0016405e
+manufacturer_id: 0x5e
+device_id: 0x4016
+Wrote 4194304 bytes (821968 compressed) at 0x00000000 in 72.7 seconds (effective 461.6 kbit/s)...
+Hash of data verified.Wrote 1441792 bytes (28463 compressed) at 0x00290000 in 8.4 seconds (effective 1368.4 kbit/s)...
+Hash of data verified.
+Leaving...
+com closed
+Use time: 98 s
+Download result: PASS
+*************************** END ****************************
+
