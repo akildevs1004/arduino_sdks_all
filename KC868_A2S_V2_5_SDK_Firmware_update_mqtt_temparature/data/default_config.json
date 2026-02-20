@@ -1,0 +1,65 @@
+{
+  "wifi_ssid": "",
+  "wifi_password": "",
+  "wifi_ip": "",
+  "wifi_or_ethernet": "0",
+  "eth_ip": "",
+  "eth_gateway": "",
+  "eth_subnet": "",
+  "server_url": "https://backend.xtremeguard.org/api/alarm_device_status",
+  "heartbeat": 20,
+  "reset_settings_duration": 20,
+  "server_ip": "",
+  "server_port": "6002",
+  "min_temperature": 20,
+  "max_temperature": "29",
+  "max_humidity": 60,
+  "max_doorcontact": 3,
+  "max_siren_play": 15,
+  "max_siren_pause": 15,
+  "door_checkbox": false,
+  "humidity_checkbox": false,
+  "temp_checkbox": false,
+  "water_checkbox": false,
+  "fire_checkbox": false,
+  "power_checkbox": false,
+  "smoke_checkbox": false,
+  "siren_checkbox": false,
+  "max_temperature_sensor_count": 2,
+  "http_communication": false,
+  "socket_communication": false,
+  "mqtt_communication": true,
+  "temperature_read_interval": 60,
+  "temperature_difference": 0.2,
+  "mqtt_server": "165.22.222.111",
+  "mqtt_port": 1883,
+  "mqtt_clientId": "xtreemparking",
+  "alarms": [
+   
+      { "id": 1, "display_name": "water_alarm", "delay": 0,"checkbox_enabled":true,"alarm_status":false } ,
+      { "id": 2, "display_name": "door_alarm", "delay": 10 ,"checkbox_enabled":true,"alarm_status":false } 
+       
+
+    ],
+  "temperature_alerts_config": [
+    {
+      "sensor_address_id": 1,
+      "temperature": {
+        "enabled": false,
+        "max": "30",
+        "min": "20",
+        "sms": false,
+        "call": false,
+        "whatsapp": false
+      },
+      "humidity": {
+        "enabled": false,
+        "max": null,
+        "min": null,
+        "sms": false,
+        "call": false,
+        "whatsapp": false
+      }
+    }
+  ]
+}
