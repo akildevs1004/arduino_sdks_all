@@ -82,7 +82,7 @@ void networkSetup1() {
     delay(1000);
     updateJsonConfig("config.json", "ipaddress", DeviceIPNumber);
     updateJsonConfig("config.json", "firmWareVersion", firmWareVersion);
-    updateJsonConfig("config.json", "internet", "online");
+    updateJsonConfig("config.json", "internet", "offline");
 
     // configTime(0, 0, "pool.ntp.org");
     // delay(2000);  // Wait for NTP sync
@@ -121,7 +121,7 @@ void networkLoop() {
   if (nowInternet - lastInternetCheck >= checkInterval) {
     lastInternetCheck = nowInternet;
 
-    checkInternetConnection();
+    //checkInternetConnection();
 
     // if (!hasInternet || config["mqtt"] == "offline") {
     //   Serial.println("🔁 Restarting due to no internet...");
@@ -133,8 +133,8 @@ void networkLoop() {
 void networkStatusLoop() {
   if (WiFi.status() == WL_CONNECTED || USE_ETHERNET) {
 
-    if (config["internet"] != "online")
-      updateJsonConfig("config.json", "internet", "online");
+    // if (config["internet"] != "online")
+    //   updateJsonConfig("config.json", "internet", "offline");
 
     if (cloudAccountActiveDaysRemaining > 0) {
 
@@ -234,6 +234,81 @@ void startNetworkProcessStep1() {
 
   configureWifiEtherNetServer();  //server start
 }
+void configureWifiEtherNetServer() {
+  if (USE_ETHERNET) {
+    // Initialize file system
+    if (!LittleFS.begin(true)) {
+      Serial.println("An error occurred while mounting LittleFS");
+      return;
+    }
+
+    String ethIpStr      = config["eth_ip"].as<String>();
+    String ethGatewayStr = config["eth_gateway"].as<String>();
+    String ethSubnetStr  = config["eth_subnet"].as<String>();
+
+    ethIpStr.trim();
+    ethGatewayStr.trim();
+    ethSubnetStr.trim();
+
+    // Parse gateway and subnet first
+    bool gatewayOk = gateway.fromString(ethGatewayStr);
+    bool subnetOk  = subnet.fromString(ethSubnetStr);
+
+    if (!gatewayOk) {
+      Serial.println("Invalid or empty Ethernet gateway in config");
+      gateway = IPAddress(192, 168, 1, 1);   // safe fallback
+    }
+
+    if (!subnetOk) {
+      Serial.println("Invalid or empty Ethernet subnet in config");
+      subnet = IPAddress(255, 255, 255, 0);  // safe fallback
+    }
+
+    // Decide IP:
+    // 1. If config eth_ip exists -> use it
+    // 2. Else derive from gateway, same series, last octet = 200
+    if (ethIpStr.length() > 0 && local_IP.fromString(ethIpStr)) {
+      Serial.println("Using Ethernet IP from config");
+    } else {
+      Serial.println("Ethernet IP empty/invalid, deriving IP from gateway...");
+      local_IP = gateway;
+      local_IP[3] = 200;   // same subnet, host = 200
+    }
+
+    DeviceIPNumber = local_IP.toString();
+
+    Serial.println("Ethernet Settings:");
+    Serial.println("IP      : " + local_IP.toString());
+    Serial.println("Gateway : " + gateway.toString());
+    Serial.println("Subnet  : " + subnet.toString());
+
+    // Start Ethernet only once
+    if (!ETH.begin(ETH_TYPE, ETH_PHY_ADDR, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_POWER_PIN, ETH_CLK_MODE)) {
+      Serial.println("Ethernet Failed to Start");
+      return;
+    }
+
+    delay(5000);
+
+    // Apply static IP after ETH.begin()
+    if (!ETH.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
+      Serial.println("Failed to configure Ethernet with static IP");
+    } else {
+      Serial.println("Ethernet configured successfully");
+      Serial.println("Static IP: " + ETH.localIP().toString());
+      DeviceIPNumber = ETH.localIP().toString();
+    }
+
+    WiFi.onEvent(onEthEvent);
+    isNetworkConnected = true;
+
+  } else {
+    connectWifiInternet();
+    WiFi.onEvent(onWiFiEvent);
+    isNetworkConnected = true;
+  }
+}
+/*
 void configureWifiEtherNetServer() {
   // Apply configuration
   if (USE_ETHERNET) {
@@ -396,7 +471,7 @@ void configureWifiEtherNetServer() {
     WiFi.onEvent(onWiFiEvent);
     isNetworkConnected = true;
   }
-}
+}*/
 /*
 void configureWifiEtherNetServer() {
   // Apply configuration
@@ -675,11 +750,11 @@ void onWiFiEvent(WiFiEvent_t event) {
 void checkInternetConnection() {
   // if (!isNetworkConnected) {
 
-  //   Serial.println("🌐 ❌ No Network");
+   Serial.println("🌐 ❌ No Network");
   //   hasInternet = false;
   //   return;
   // }
- updateJsonConfig("config.json", "internet", "offline");
+//  updateJsonConfig("config.json", "internet", "offline");
   return ;
 
   HTTPClient http;
@@ -695,7 +770,7 @@ void checkInternetConnection() {
     pcf8574_RE1.digitalWrite(RELAY_INTERNET_LED, LOW);  // LOW = ON
     digitalWrite(RELAY1_NETWORK_STATUS_PIN, HIGH);
 
-    updateJsonConfig("config.json", "internet", "online");
+    updateJsonConfig("config.json", "internet", "offline");
     updateJsonConfig("config.json", "relay5", "true");
     delay(1000);
     mqttsetup();

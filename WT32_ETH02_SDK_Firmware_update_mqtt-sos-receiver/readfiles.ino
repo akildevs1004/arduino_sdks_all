@@ -121,7 +121,12 @@ void updateJsonConfig(String filename, String param, String value) {
 
   if (config[param] == value) {
     loadingConfigFile = false;
-    Serial.println("No Value change - Same value is passed");
+    Serial.print(param);
+    Serial.println(" - ");
+
+    Serial.print(value);
+
+    Serial.println(" - No Value change - Same value is passed");
     return;
   }
 

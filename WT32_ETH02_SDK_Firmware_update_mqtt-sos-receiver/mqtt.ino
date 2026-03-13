@@ -35,7 +35,7 @@ PubSubClient mqttclient(espClient);
 StaticJsonDocument<256> mqttconfig;
 
 unsigned long lastMqttReconnectAttempt = 0;
-const unsigned long mqttReconnectInterval = 5000;  // 5 seconds
+const long mqttReconnectInterval = 1000 * 60;  // 5 seconds
 
 // std::string topic_heartbeat_str = std::string("device/") + String(device_serial_number) + "/heartbeat";
 // const char* topic_heartbeat = topic_heartbeat_str.c_str();
@@ -239,7 +239,7 @@ void connectToMQTT() {
     }
   }
 }
-
+/*
 void mqttsetup() {
   // mqtt_server =  config["mqtt_server"];//"broker.hivemq.com";
   // mqtt_port = config["mqtt_port"];//1883;
@@ -282,6 +282,90 @@ void mqttHeartBeat(String hbPayload) {
   Serial.println(hbPayload);
 
   mqttclient.publish(MqttTopic_pubheartbeat.c_str(), hbPayload.c_str());
+}*/
+
+
+void mqttsetup() {
+  // mqtt_server =  config["mqtt_server"];//"broker.hivemq.com";
+  // mqtt_port = config["mqtt_port"];//1883;
+
+
+  mqtt_server = config["mqtt_server"].as<const char*>();
+  mqtt_port = config["mqtt_port"].as<int>();
+  clientId = config["mqtt_clientId"].as<String>();
+
+  MqttTopic_sub = clientId + "/" + device_serial_number + "/config/request";
+  MqttTopic_pub = clientId + "/" + device_serial_number + "/config";
+  MqttTopic_pubheartbeat = clientId + "/" + device_serial_number + "/heartbeat";
+
+
+  connectToMQTT();
+  mqttclient.setBufferSize(3000);
+}
+ 
+
+void mqttloop() {
+
+
+  static uint32_t lastAttempt = 0;
+
+  if (!mqttclient.connected()) {
+    uint32_t now = millis();
+    if (now - lastAttempt > 1000 * 60) {  // try every 5s
+      lastAttempt = now;
+      connectToMQTT();  // single attempt only
+    }
+    return;  // don't call mqttclient.loop() when disconnected
+  }
+
+  mqttclient.loop();
+
+
+
+
+
+
+  /*
+
+
+  if (!mqttclient.connected()) {
+
+    // unsigned long now = millis();
+
+    // if (now - lastMqttReconnectAttempt > mqttReconnectInterval) {
+    //   lastMqttReconnectAttempt = now;
+    //   connectToMQTT();
+
+    //   if (mqttclient.connected()) {
+    //     lastMqttReconnectAttempt = 0;  // Reset on success
+    //   }
+    // }
+
+  } else {
+    mqttclient.loop();
+  }
+  */
+}
+// void mqttloop() {
+//   if (!mqttclient.connected()) {
+//     connectToMQTT();
+//   }
+//   mqttclient.loop();
+// }
+
+void mqttHeartBeat(String hbPayload) {
+  // mqttclient.publish(topic_heartbeat, hbPayload.c_str());
+
+  if (config["mqtt"] == "offline") {
+      connectToMQTT();
+
+  } else if (config["mqtt"] == "online") {
+
+    Serial.println("MQTT - Heartbeat Sent");
+    Serial.println(hbPayload);
+
+    mqttclient.publish(MqttTopic_pubheartbeat.c_str(), hbPayload.c_str());
+  }
 }
 void mqttAlarmNotification(String hbPayload) {
   Serial.println("MQTT - Alarm Sent");

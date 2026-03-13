@@ -128,9 +128,11 @@ void verifyAlarm() {
     int delaySec = alarmObj["delay"] | 0;
     bool enabled = alarmObj["checkbox_enabled"] | false;  // ✅ correct for true/false
 
-    const char* name = alarmObj["display_name"] | "unknown";
+    const char* name = alarmObj["alarm_name"] | "unknown";
 
     bool rawActive = (enabled && pin >= 0) ? isSensorActive(pin) : false;
+
+    if(!rawActive)delaySec=0;
 
     bool active = false;
 

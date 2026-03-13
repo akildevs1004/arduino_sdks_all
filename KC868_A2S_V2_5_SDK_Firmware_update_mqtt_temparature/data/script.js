@@ -385,6 +385,20 @@ function loadConfigFileData() {
         ? ""
         : jsonData.temperature_read_interval;
 
+
+
+
+
+        //aalrms 
+
+         document.getElementById("alarm1_delay").value =  jsonData.alarms[0].alarm_delay == "{alarm1_delay}"  ? ""      : jsonData.alarms[0].delay;
+
+          document.getElementById("alarm2_delay").value =  jsonData.alarms[1].alarm_delay == "{alarm2_delay}" ? ""     : jsonData.alarms[1].delay;
+
+          document.getElementById("alarm1_name").value =      jsonData.alarms[0].alarm_name == "{alarm1_name}" ? ""        : jsonData.alarms[0].alarm_name;
+
+          document.getElementById("alarm2_name").value =  jsonData.alarms[1].alarm_name == "{alarm2_name}"   ? ""   : jsonData.alarms[1].alarm_name;
+
     // document.getElementById("min_temperature").value =
     //   jsonData.min_temperature == "{min_temperature}"
     //     ? ""

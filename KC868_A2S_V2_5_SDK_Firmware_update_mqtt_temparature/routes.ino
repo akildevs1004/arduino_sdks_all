@@ -326,7 +326,7 @@ void handleForm1Submit() {
   doc["eth_gateway"] = server.arg("eth_gateway");
   doc["eth_subnet"] = server.arg("eth_subnet");
 
-  //doc["device_serial_number"] = device_serial_number;  //config["device_serial_number"].as<String>() ;//server.arg("device_serial_number");
+  doc["device_serial_number"] = server.arg("device_serial_number");  //device_serial_number;  //config["device_serial_number"].as<String>() ;//server.arg("device_serial_number");
 
 
   // doc["server_url"] = server.arg("server_url");
@@ -342,8 +342,43 @@ void handleForm1Submit() {
   doc["min_temperature"] = server.arg("min_temperature");
   doc["max_temperature"] = server.arg("max_temperature");
 
+  doc["alarms"] = config["alarms"];
 
 
+  // doc["alarms"][0]["id"] = config["alarms"][0]["id"];
+  // doc["alarms"][0]["alarm_name"] = server.arg("alarm1_name");
+  // doc["alarms"][0]["delay"] = server.arg("alarm1_delay");
+  // doc["alarms"][0]["checkbox_enabled"] = config["alarms"][0]["checkbox_enabled"];
+  // doc["alarms"][0]["alarm_status"] = config["alarms"][0]["alarm_status"];
+
+  //  doc["alarms"][1]["id"] = config["alarms"][1]["id"];
+  // doc["alarms"][1]["alarm_name"] = server.arg("alarm2_name");
+  // doc["alarms"][1]["delay"] = server.arg("alarm2_delay");
+  // doc["alarms"][1]["checkbox_enabled"] = config["alarms"][1]["checkbox_enabled"];
+  // doc["alarms"][1]["alarm_status"] = config["alarms"][1]["alarm_status"];
+
+
+  JsonArray newAlarms = doc.createNestedArray("alarms");
+  JsonArray oldAlarms = config["alarms"].as<JsonArray>();
+
+  for (int i = 0; i < oldAlarms.size(); i++) {
+
+    JsonObject oldAlarm = oldAlarms[i];
+    JsonObject newAlarm = newAlarms.createNestedObject();
+
+    newAlarm["id"] = oldAlarm["id"];
+
+    if (i == 0) {
+      newAlarm["alarm_name"] = server.arg("alarm1_name");
+      newAlarm["delay"] = server.arg("alarm1_delay").toInt();  // ✅ store as int
+    } else if (i == 1) {
+      newAlarm["alarm_name"] = server.arg("alarm2_name");
+      newAlarm["delay"] = server.arg("alarm2_delay").toInt();  // ✅ store as int
+    }
+
+    newAlarm["checkbox_enabled"] = oldAlarm["checkbox_enabled"] | false;
+    newAlarm["alarm_status"] = oldAlarm["alarm_status"] | false;
+  }
 
 
 
@@ -426,7 +461,7 @@ void handleForm1Submit() {
 
   delay(1000);
   loadingConfigFile = false;
- server.send(200, "text/html",
+  server.send(200, "text/html",
               "<html><body>"
 
               "<p>Device is restarting...Please wait...</p>"
@@ -593,13 +628,15 @@ void sendPostRequest(const char* path, String payload) {
 
 void sendTemperatureDataToServerHttp(String jsonData) {
   {
-    if (config["http_communication"])
-      sendNotificationToServerHttp(jsonData);
+    // if (config["http_communication"])
+    //   sendNotificationToServerHttp(jsonData);
 
-    if (config["socket_communication"])
-      sendAlarmTriggerToSocketserver(jsonData);
+    // if (config["socket_communication"])
+    //   sendAlarmTriggerToSocketserver(jsonData);
 
     if (config["mqtt_communication"])
+
+
       mqttAlarmNotification(jsonData);
   }
 }

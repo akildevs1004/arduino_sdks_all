@@ -75,84 +75,70 @@ void configureWifiEtherNetServer() {
   // Apply configuration
   if (USE_ETHERNET) {
 
-    local_IP.fromString(config["eth_ip"].as<String>());
-    gateway.fromString(config["eth_gateway"].as<String>());
-    subnet.fromString(config["eth_subnet"].as<String>());
+  // Mount FS once (do it outside if possible)
+  if (!LittleFS.begin(true)) {
+    Serial.println("LittleFS mount failed");
+    return;
+  }
 
-    DeviceIPNumber = config["eth_ip"].as<String>();
+  // Load desired static config from JSON
+  IPAddress local_IP, gateway, subnet, primaryDNS, secondaryDNS;
 
-    ETH.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
+  local_IP.fromString((const char*)(config["eth_ip"] | ""));
+  gateway.fromString((const char*)(config["eth_gateway"] | "192.168.1.1"));
+  subnet.fromString((const char*)(config["eth_subnet"] | "255.255.255.0"));
 
-    delay(2000);
-    // Your existing Ethernet setup code...
-    if (!ETH.begin(ETH_TYPE, ETH_PHY_ADDR, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_POWER_PIN, ETH_CLK_MODE)) {
-      Serial.println("Ethernet Failed to Start");
-    }
+  primaryDNS.fromString((const char*)(config["primary_dns"] | "8.8.8.8"));
+  secondaryDNS.fromString((const char*)(config["secondary_dns"] | "8.8.4.4"));
 
+  Serial.println("Starting Ethernet...");
 
-    // Initialize LittleFS
-    if (!LittleFS.begin(true)) {
-      Serial.println("An error occurred while mounting LittleFS");
-      return;
-    }
+  // ✅ BEGIN FIRST (only once)
+  if (!ETH.begin(ETH_TYPE, ETH_PHY_ADDR, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_POWER_PIN, ETH_CLK_MODE)) {
+    Serial.println("Ethernet Failed to Start");
+    return;
+  }
 
-    // WiFi.onEvent(WiFiEvent);
+  // optional: wait link up a bit
+  unsigned long t0 = millis();
+  while (!ETH.linkUp() && millis() - t0 < 5000) {
+    delay(100);
+  }
 
+  // ✅ CONFIG AFTER BEGIN
+  if (!ETH.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
+    Serial.println("Failed to configure Ethernet with static IP");
+  } else {
+    Serial.print("Static IP: ");
+    Serial.println(ETH.localIP());
 
-
-
-
-    if (!ETH.begin(ETH_TYPE, ETH_PHY_ADDR, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_POWER_PIN, ETH_CLK_MODE)) {
-      Serial.println("Ethernet Failed to Start");
-      return;
-    }
-
-    //   if ( ETH.linkStatus()==ETH_LINK_OFF) {
-    //   delay(1000);
-    // }
-    delay(5000);
-    // Apply static IP configuration
-    if (!ETH.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
-      Serial.println("Failed to configure Ethernet with static IP");
-    } else {
-      Serial.println("Static IP: ");
-      Serial.println(ETH.localIP());
-      DeviceIPNumber = ETH.localIP().toString();
-if(DeviceIPNumber!="0.0.0.0")
+    DeviceIPNumber = ETH.localIP().toString();
+    if (DeviceIPNumber != "0.0.0.0") {
       updateJsonConfig("config.json", "eth_ip", DeviceIPNumber);
     }
+  }
 
-    isNetworkConnected = true;
-
-    WiFi.onEvent(onEthEvent);
-    // if (ETH.linkUp()) {
-    //   configTime(0, 0, "pool.ntp.org");
-    //   delay(2000);  // Wait for NTP sync
-
-    //   // // Get today's date
-    //   todayDate = getCurrentDate();
-    //   Serial.println("Today's Date: " + todayDate);
-    // }
-  } else {
+  WiFi.onEvent(onEthEvent);
+  isNetworkConnected = true;
+} else {
 
     connectWifiInernet();
     WiFi.onEvent(onWiFiEvent);
     isNetworkConnected = true;
   }
 }
-void connectWifiInernet() {
 
+
+void connectWifiInernet() {
 
   String wifissid = config["wifi_ssid"] | "";
   String wifipassword = config["wifi_password"] | "";
 
-  if (wifissid.length() == 0) {
-    Serial.println("WiFi SSID missing in config");
-    return;
-  }
-
-  // Step 1: Connect with DHCP to fetch gateway & subnet
   Serial.println("Connecting with DHCP to get gateway...");
+
+  WiFi.mode(WIFI_OFF);
+  delay(200);
+
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
   WiFi.disconnect(true, true);
@@ -163,7 +149,6 @@ void connectWifiInernet() {
 
   WiFi.begin(wifissid.c_str(), wifipassword.c_str());
 
-  // ✅ timeout connect (20s)
   unsigned long t0 = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - t0 < 20000) {
     delay(300);
@@ -184,7 +169,7 @@ void connectWifiInernet() {
   Serial.print("Detected Subnet : ");
   Serial.println(subnet);
 
-  // Step 2: Prepare static IP settings from config
+  // Read static IP from config
   IPAddress staticIP, primaryDNS, secondaryDNS;
 
   if (!staticIP.fromString((const char*)(config["wifi_ip"] | ""))) {
@@ -193,17 +178,23 @@ void connectWifiInernet() {
   }
 
   if (!primaryDNS.fromString((const char*)(config["primary_dns"] | "8.8.8.8"))) {
-    primaryDNS = IPAddress(8, 8, 8, 8);
+    primaryDNS = IPAddress(8,8,8,8);
   }
-
   if (!secondaryDNS.fromString((const char*)(config["secondary_dns"] | "8.8.4.4"))) {
-    secondaryDNS = IPAddress(8, 8, 4, 4);
+    secondaryDNS = IPAddress(8,8,4,4);
   }
 
-  // Step 3: Disconnect, apply static IP config, and reconnect
   Serial.println("Reconnecting with static IP...");
+
+  // ✅ Correct order for static IP
   WiFi.disconnect(true, true);
-  delay(500);
+  delay(300);
+
+  WiFi.mode(WIFI_OFF);
+  delay(200);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
 
   if (!WiFi.config(staticIP, gateway, subnet, primaryDNS, secondaryDNS)) {
     Serial.println("Failed to set static IP config!");
@@ -230,13 +221,111 @@ void connectWifiInernet() {
   }
 
   Serial.println("WiFi Connected with Static IP:");
-  Serial.print("IP Address : ");
-  Serial.println(WiFi.localIP());
-  Serial.print("Gateway    : ");
-  Serial.println(WiFi.gatewayIP());
-  Serial.print("Subnet     : ");
-  Serial.println(WiFi.subnetMask());
-} 
+  Serial.print("IP Address : "); Serial.println(WiFi.localIP());
+  Serial.print("Gateway    : "); Serial.println(WiFi.gatewayIP());
+  Serial.print("Subnet     : "); Serial.println(WiFi.subnetMask());
+}
+
+
+
+
+
+void connectWifiInernetold() {
+
+  String wifissid = config["wifi_ssid"] | "";
+  String wifipassword = config["wifi_password"] | "";
+
+  Serial.println("Connecting with DHCP to get gateway...");
+
+  WiFi.mode(WIFI_OFF);
+  delay(200);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
+  WiFi.disconnect(true, true);
+  delay(200);
+
+  Serial.print("WiFi connecting to: ");
+  Serial.println(wifissid);
+
+  WiFi.begin(wifissid.c_str(), wifipassword.c_str());
+
+  unsigned long t0 = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - t0 < 20000) {
+    delay(300);
+    Serial.print(".");
+  }
+  Serial.println();
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Initial WiFi connection failed");
+    return;
+  }
+
+  IPAddress gateway = WiFi.gatewayIP();
+  IPAddress subnet  = WiFi.subnetMask();
+
+  Serial.print("Detected Gateway: ");
+  Serial.println(gateway);
+  Serial.print("Detected Subnet : ");
+  Serial.println(subnet);
+
+  // Read static IP from config
+  IPAddress staticIP, primaryDNS, secondaryDNS;
+
+  if (!staticIP.fromString((const char*)(config["wifi_ip"] | ""))) {
+    Serial.println("Invalid static IP in config");
+    return;
+  }
+
+  if (!primaryDNS.fromString((const char*)(config["primary_dns"] | "8.8.8.8"))) {
+    primaryDNS = IPAddress(8,8,8,8);
+  }
+  if (!secondaryDNS.fromString((const char*)(config["secondary_dns"] | "8.8.4.4"))) {
+    secondaryDNS = IPAddress(8,8,4,4);
+  }
+
+  Serial.println("Reconnecting with static IP...");
+
+  // ✅ Correct order for static IP
+  WiFi.disconnect(true, true);
+  delay(300);
+
+  WiFi.mode(WIFI_OFF);
+  delay(200);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
+
+  if (!WiFi.config(staticIP, gateway, subnet, primaryDNS, secondaryDNS)) {
+    Serial.println("Failed to set static IP config!");
+    return;
+  }
+
+  WiFi.begin(wifissid.c_str(), wifipassword.c_str());
+
+  t0 = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - t0 < 20000) {
+    delay(300);
+    Serial.print(".");
+  }
+  Serial.println();
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi reconnection with static IP failed");
+    return;
+  }
+
+  DeviceIPNumber = WiFi.localIP().toString();
+  if (DeviceIPNumber != "0.0.0.0") {
+    updateJsonConfig("config.json", "wifi_ip", DeviceIPNumber);
+  }
+
+  Serial.println("WiFi Connected with Static IP:");
+  Serial.print("IP Address : "); Serial.println(WiFi.localIP());
+  Serial.print("Gateway    : "); Serial.println(WiFi.gatewayIP());
+  Serial.print("Subnet     : "); Serial.println(WiFi.subnetMask());
+}
 
 
 // Called when Ethernet is up

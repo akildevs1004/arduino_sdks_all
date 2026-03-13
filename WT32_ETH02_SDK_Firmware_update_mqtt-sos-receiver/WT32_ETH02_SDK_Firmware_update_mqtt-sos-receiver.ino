@@ -44,7 +44,7 @@ String default_device_serial_number = "XTSOS251005";  //SOS Device
 String device_serial_number = "";
 bool USE_ETHERNET = true;
 bool USE_DEFAULT_WIFIMANGER = false;
-String firmWareVersion = "1.0";
+String firmWareVersion = "1.32";
 
 bool loadingConfigFile = false;
 

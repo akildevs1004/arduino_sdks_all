@@ -109,10 +109,10 @@ void publishConfigToMQTT() {
 #endif
   } else {
     Serial.println("❌ MQTT publish failed");
-    Serial.println("Possible reasons:");
+    // Serial.println("Possible reasons:");
     Serial.println("- MQTT not connected");
     // Serial.println("- Payload too large (" + String(payload.length()) + " bytes)");
-    Serial.println("- Network issues");
+    // Serial.println("- Network issues");
   }
 }
 void updateConfigThrougMqtt(String message) {
@@ -179,57 +179,46 @@ void updateConfigThrougMqtt(String message) {
 void connectToMQTT() {
   mqttclient.setServer(mqtt_server, mqtt_port);
   mqttclient.setCallback(MqttCallback);
-  if (!mqttclient.connected()) {
+  mqttclient.setBufferSize(3000);
 
-    mqttclient.disconnect();
-    delay(100);
-    //String clientId = String(device_serial_number);
-    clientId = clientId + "-" + device_serial_number;
-    if (mqttclient.connect(clientId.c_str())) {
-      Serial.println("MQTT connected");
-      mqttclient.setBufferSize(3000);  // Must be ≥ your max payload
-      mqttclient.subscribe(MqttTopic_sub.c_str());
-      Serial.println("Subscribed to: " + MqttTopic_sub);
+  if (mqttclient.connected()) return;
 
-      updateJsonConfig("config.json", "mqtt", "online");
+  // quick network sanity
+  Serial.print("Local IP: ");
+  Serial.println(USE_ETHERNET ? ETH.localIP() : WiFi.localIP());
 
+  // TCP reachability check (optional but recommended)
+  WiFiClient tmp;
+  Serial.printf("TCP test to %s:%d ...\n", mqtt_server, mqtt_port);
+  if (!tmp.connect(mqtt_server, mqtt_port)) {
+    Serial.println("TCP FAIL => broker/port unreachable (this causes state -2)");
+    return;
+  }
+  tmp.stop();
 
+  // Build clientId fresh (do NOT keep appending)
+  String cid = "ESP32Device-" + String(device_serial_number);
 
+  Serial.print("MQTT connecting. clientId=");
+  Serial.println(cid);
 
+  if (mqttclient.connect(cid.c_str())) {
+    Serial.println("MQTT connected");
+    mqttclient.subscribe(MqttTopic_sub.c_str());
 
+    Serial.println("Subscribed to: " + MqttTopic_sub);
+    updateJsonConfig("config.json", "mqtt", "online");
 
-      digitalWrite(RELAY_GATE0, HIGH);
-      digitalWrite(RELAY_GATE1, HIGH);
-      delay(1000);
-      digitalWrite(RELAY_GATE0, LOW);
-      digitalWrite(RELAY_GATE1, LOW);
-      delay(1000);
-      digitalWrite(RELAY_GATE0, HIGH);
-      digitalWrite(RELAY_GATE1, HIGH);
-      delay(1000);
-      digitalWrite(RELAY_GATE0, LOW);
-      digitalWrite(RELAY_GATE1, LOW);
+    // ⚠ if your relays are active-low adjust these writes
+    digitalWrite(RELAY_GATE0, HIGH);
+    digitalWrite(RELAY_GATE1, HIGH);
+    delay(300);
+    digitalWrite(RELAY_GATE0, LOW);
+    digitalWrite(RELAY_GATE1, LOW);
 
-
-
-    } else {
-      Serial.print(mqtt_server);
-      Serial.print("---");
-
-      Serial.print(mqtt_port);
-
-
-      Serial.print("MQTT connect failed. State: ");
-
-
-      Serial.println(mqttclient.state());
-      // Ensure clean disconnect before reconnect
-
-      // mqttsetup();
-      // // startNetworkProcessStep1();
-      // updateJsonConfig("config.json", "mqtt", "offline");
-      // delay(2000);
-    }
+  } else {
+    Serial.printf("MQTT connect failed. State: %d\n", mqttclient.state());
+    updateJsonConfig("config.json", "mqtt", "offline");
   }
 }
 
@@ -256,15 +245,15 @@ const long mqttReconnectInterval = 1000 * 60;  // 5 seconds
 void mqttloop() {
 
 
-static uint32_t lastAttempt = 0;
+  static uint32_t lastAttempt = 0;
 
   if (!mqttclient.connected()) {
     uint32_t now = millis();
-    if (now - lastAttempt > 1000*60) {   // try every 5s
+    if (now - lastAttempt > 1000 * 60) {  // try every 5s
       lastAttempt = now;
-      connectToMQTT();                // single attempt only
+      connectToMQTT();  // single attempt only
     }
-    return; // don't call mqttclient.loop() when disconnected
+    return;  // don't call mqttclient.loop() when disconnected
   }
 
   mqttclient.loop();
@@ -274,7 +263,7 @@ static uint32_t lastAttempt = 0;
 
 
 
-/*
+  /*
 
 
   if (!mqttclient.connected()) {
@@ -305,12 +294,10 @@ static uint32_t lastAttempt = 0;
 void mqttHeartBeat(String hbPayload) {
   // mqttclient.publish(topic_heartbeat, hbPayload.c_str());
 
-  if (config["mqtt"] == "offline" )
-  {
-      // connectToMQTT();
+  if (config["mqtt"] == "offline") {
+    // connectToMQTT();
 
-    }
-  else if (config["mqtt"] == "online" ) {
+  } else if (config["mqtt"] == "online") {
 
     Serial.println("MQTT - Heartbeat Sent");
     Serial.println(hbPayload);
@@ -322,7 +309,7 @@ void mqttAlarmNotification(String hbPayload) {
   Serial.println("MQTT - Alarm Sent");
   Serial.println(hbPayload);
 
-
+  
   mqttclient.publish(MqttTopic_pub.c_str(), hbPayload.c_str());
   publishConfigToMQTT();
 }

@@ -249,7 +249,7 @@ void handleHeartbeat() {
       DynamicJsonDocument heartbeatDoc2(2048);
       heartbeatDoc2["serialNumber"] = config["device_serial_number"];
       heartbeatDoc2["type"] = "heartbeat";
-      heartbeatDoc2["testing"] = "yes";
+      // heartbeatDoc2["testing"] = "yes";
 
       heartbeatDoc2["timestamp"] = millis();
       //heartbeatDoc2["config"] = readConfig("config.json");  //deviceConfigContent;  // ////////readConfig("config.json");
