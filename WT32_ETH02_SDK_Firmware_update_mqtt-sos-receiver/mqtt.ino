@@ -10,7 +10,7 @@
 // const char* password = "Akil1234";  // Enter WiFi password
 
 // MQTT Broker
-const char* mqtt_server = "broker.hivemq.com";
+String mqtt_server = "broker.hivemq.com";
 int mqtt_port = 1883;
 String clientId = "xtremesosdevice";
 
@@ -35,7 +35,7 @@ PubSubClient mqttclient(espClient);
 StaticJsonDocument<256> mqttconfig;
 
 unsigned long lastMqttReconnectAttempt = 0;
-const long mqttReconnectInterval = 1000 * 60;  // 5 seconds
+const long mqttReconnectInterval = 1000 * 30;  // 5 seconds
 
 // std::string topic_heartbeat_str = std::string("device/") + String(device_serial_number) + "/heartbeat";
 // const char* topic_heartbeat = topic_heartbeat_str.c_str();
@@ -180,7 +180,7 @@ void updateConfigThrougMqtt(String message) {
 
 
 void connectToMQTT() {
-  if (mqttclient.connected()) return;
+  if (mqttclient.connected() && config["mqtt"] == "online") return;
 
 
   
@@ -191,7 +191,11 @@ void connectToMQTT() {
   }
   lastMqttReconnectAttempt = now;
 
-  mqttclient.setServer(mqtt_server, mqtt_port);
+
+
+mqtt_server = config["mqtt_server"].as<String>();
+
+  mqttclient.setServer(mqtt_server.c_str(), mqtt_port);
   mqttclient.setCallback(MqttCallback);
 
   String connectId = clientId + "-" + device_serial_number;
@@ -203,10 +207,6 @@ void connectToMQTT() {
   
 
   if (mqttclient.connect(connectId.c_str()))
-
- 
-
-
   {
     Serial.println("CONNECTED");
     mqttDisconnectedSince = 0;  // reset timer
@@ -232,11 +232,13 @@ void connectToMQTT() {
       mqttDisconnectedSince = now;
     }
 
+/*
     if (now - mqttDisconnectedSince >= mqttRestartTimeout) {
       Serial.println("MQTT disconnected > 1 minute. Restarting device...");
       delay(200);
       ESP.restart();
     }
+    */
   }
 }
 /*
@@ -290,7 +292,7 @@ void mqttsetup() {
   // mqtt_port = config["mqtt_port"];//1883;
 
 
-  mqtt_server = config["mqtt_server"].as<const char*>();
+mqtt_server = config["mqtt_server"].as<String>();
   mqtt_port = config["mqtt_port"].as<int>();
   clientId = config["mqtt_clientId"].as<String>();
 
@@ -310,11 +312,14 @@ void mqttloop() {
   static uint32_t lastAttempt = 0;
 
   if (!mqttclient.connected()) {
+
+    connectToMQTT();  // single attempt only
+    /*
     uint32_t now = millis();
     if (now - lastAttempt > 1000 * 60) {  // try every 5s
       lastAttempt = now;
       connectToMQTT();  // single attempt only
-    }
+    }*/
     return;  // don't call mqttclient.loop() when disconnected
   }
 
@@ -356,10 +361,12 @@ void mqttloop() {
 void mqttHeartBeat(String hbPayload) {
   // mqttclient.publish(topic_heartbeat, hbPayload.c_str());
 
-  if (config["mqtt"] == "offline") {
-      connectToMQTT();
+  // if (config["mqtt"] == "offline") {
+  //     connectToMQTT();
 
-  } else if (config["mqtt"] == "online") {
+  // } else 
+  
+  if (config["mqtt"] == "online") {
 
     Serial.println("MQTT - Heartbeat Sent");
     Serial.println(hbPayload);
