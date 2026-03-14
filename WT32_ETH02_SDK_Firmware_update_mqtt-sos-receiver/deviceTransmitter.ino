@@ -143,8 +143,11 @@ static bool forceAllSosOffAndSave(bool resetLastSeenToZero = false) {
   }
 
   if (changed) {
+
     return saveConfigAtomic();  // saves and (in your code) publishes config to MQTT
   }
+
+
 
   // Nothing changed, no write
   return true;
@@ -183,7 +186,8 @@ static bool saveConfigAtomic() {
 
 
   if (configDoc["mqtt_communication"] | false) {
-    publishConfigToMQTT();
+
+    // publishConfigToMQTT();
   }
   return (n > 0);
   // File f = LittleFS.open(CONFIG_TMP, "w");
@@ -493,7 +497,7 @@ void setupSosApiRoutes_TwoButtons() {
   delay(200);
   //saveConfigAtomic();
 
-   
+
 
 
   // RF receiver always on
@@ -504,10 +508,9 @@ void setupSosApiRoutes_TwoButtons() {
   // RF receiver always on
   // rf.enableReceive(digitalPinToInterrupt(RF_RX_PIN2));
   // Serial.println("RF receiver enabled on GPIO3322222 A");
-setupRoutes();
+  setupRoutes();
   server.begin();
   Serial.println("HTTP server started on port 80");
- 
 }
 
 void loopSosDevice() {
@@ -567,7 +570,7 @@ void loopSosDevice() {
   } else {
     // Serial.println("RF is not available");
 
-    return  ;
+    return;
   }
 }
 
@@ -602,23 +605,25 @@ void loopSosDevice() {
 // ---------- Runtime: update status + relay from received codes ----------
 static void publishSosEvent(JsonObject d, const char* newStatus) {
 
+
+  /*
   if (strcmp(newStatus, "ON") == 0)
     digitalWrite(RELAY2_ALARM_LIGHT_PIN, HIGH);
 
   else if (strcmp(newStatus, "OFF") == 0)
     digitalWrite(RELAY2_ALARM_LIGHT_PIN, LOW);
 
+*/
 
 
 
 
+  // if (!configDoc.containsKey("mqtt_communication") || !(configDoc["mqtt_communication"] | false)) {
+  //   Serial.println("MQTT disabled");
+  //   //return;
+  // }
 
-  if (!configDoc.containsKey("mqtt_communication") || !(configDoc["mqtt_communication"] | false)) {
-    Serial.println("MQTT disabled");
-    //return;
-  }
-
-  DynamicJsonDocument payload(512);
+  DynamicJsonDocument payload(4000);
   payload["type"] = "sos";
   payload["serialNumber"] = String((const char*)(configDoc["device_serial_number"] | ""));
   payload["id"] = d["id"] | 0;
@@ -630,8 +635,9 @@ static void publishSosEvent(JsonObject d, const char* newStatus) {
 
   String out;
   serializeJson(payload, out);
-
+  // updateJsonConfig("config.json", "last_message_transmitter", "Status mqttSOSAlarmNotification");
   mqttSOSAlarmNotification(out);  // your existing publisher
+
   Serial.print("MQTT SOS payload: ");
   Serial.println(out);
   delay(200);
@@ -642,6 +648,9 @@ static void applyRfToDevicesAndRelay(uint32_t code, uint16_t bits, uint8_t proto
   bool changed = false;
   JsonArray arr = sosArr();
   String codeStr = String(code);
+
+
+ 
 
   for (JsonObject d : arr) {
     String onC = String((const char*)(d["onCode"] | ""));
@@ -677,7 +686,16 @@ static void applyRfToDevicesAndRelay(uint32_t code, uint16_t bits, uint8_t proto
       break;
     }
   }
-  if (changed) saveConfigAtomic();
+
+
+
+  if (changed) {
+    // updateJsonConfig("config.json", "last_message_transmitter", "Status Changed");
+    saveConfigAtomic();
+
+  } else {
+    // updateJsonConfig("config.json", "last_message_transmitter", "Status Not Changed");
+  }
 }
 
 void updateSOSLightStatus() {
@@ -699,7 +717,7 @@ void updateSOSLightStatus() {
 
   // Turn ON if any room alarm is ON
   // Turn OFF only if all rooms are OFF
-  digitalWrite(
-    RELAY2_ALARM_LIGHT_PIN,
-    anyOn ? HIGH : LOW);
+  // digitalWrite(
+  //   RELAY2_ALARM_LIGHT_PIN,
+  //   anyOn ? HIGH : LOW);
 }

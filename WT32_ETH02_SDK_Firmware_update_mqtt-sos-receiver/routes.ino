@@ -101,6 +101,7 @@ void routes() {
 
   server.on("/wifi-scan", HTTP_GET, handleWiFiScan);
   server.on("/wifi-save", HTTP_POST, handleWiFiSave);
+  server.on("/getconfigmqtt", HTTP_GET, handleMQTTGetConfig);
 }
 
 
@@ -156,7 +157,7 @@ void handleLoginPage() {
   Serial.print("DeviceIPNumber -----------");
   Serial.println(DeviceIPNumber);
 
-  if (DeviceIPNumber =="") {
+  if (DeviceIPNumber == "") {
     handleRestartDevice();
   }
 
@@ -325,7 +326,7 @@ void handleSubmitCommunication() {
 
 
 
-  doc["mqtt_communication"] =true; //server.hasArg("mqtt_communication");
+  doc["mqtt_communication"] = true;  //server.hasArg("mqtt_communication");
   doc["mqtt_server"] = server.arg("mqtt_server");
   doc["mqtt_port"] = server.arg("mqtt_port");
   doc["mqtt_clientId"] = server.arg("mqtt_clientId");
@@ -821,6 +822,33 @@ void handleWiFiScan() {
   String json;
   serializeJson(doc, json);
   server.send(200, "application/json", json);
+}
+
+void handleMQTTGetConfig() {
+
+
+
+ String sosData;
+  DynamicJsonDocument sosDoc2(2048);
+  sosDoc2["serialNumber"] = "Test";
+  sosDoc2["roomId"] = "Test";
+  sosDoc2["status"] = "Test";
+  sosDoc2["onCode"] = "Test";
+  sosDoc2["offCode"] = "Test";
+  sosDoc2["type"] = "sos";
+  sosDoc2["timestamp"] = millis();
+  serializeJson(sosDoc2, sosData);
+  // mqttSOSAlarmNotification(sosData);
+
+
+
+
+
+
+
+  // publishConfigToMQTT();
+
+  server.send(200, "text/plain", config["last_message"].as<String>());
 }
 
 // ==== WiFi Save AJAX ====
