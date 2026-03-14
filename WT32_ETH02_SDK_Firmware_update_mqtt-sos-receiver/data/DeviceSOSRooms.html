@@ -1,163 +1,644 @@
-<link rel="stylesheet" href="/sos.css">
-<div class="container1">
-    <div class="tabcontent" id="tab2">
-        <div style="width:100%; background-color:transparent" class="form">
-            <div class="wrap">
-                <div class="topbar">
-                    <div class="title">
-                        <h1 style="color:#97d473">SOS Devices</h1>
+<!doctype html>
+<html lang="en">
 
-                    </div>
-                    <div class="actions">
-                        <div class="hint"><span id="count">0</span> Devices</div>
-                        <span class="pill" style="display: none;"><span id="connDot" class="dot"></span><span
-                                id="connText">Checking…</span></span>
-                        <button id="btnReload" class="primary">Reload</button>
-                        <button id="btnOpen" class="primary">Add Device</button>
-                    </div>
-                </div>
-            </div>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SOS Devices</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: rgba(255, 255, 255, .06);
+      --card2: rgba(255, 255, 255, .10);
+      --text: rgba(255, 255, 255, .92);
+      --muted: rgba(255, 255, 255, .62);
+      --line: rgba(255, 255, 255, .14);
+      --shadow: 0 18px 45px rgba(0, 0, 0, .35);
+      --radius: 14px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
 
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f7fb;
+        --card: rgba(0, 0, 0, .04);
+        --card2: rgba(0, 0, 0, .06);
+        --text: rgba(0, 0, 0, .88);
+        --muted: rgba(0, 0, 0, .60);
+        --line: rgba(0, 0, 0, .10);
+        --shadow: 0 18px 45px rgba(0, 0, 0, .10);
+      }
+    }
 
+    * {
+      box-sizing: border-box;
+    }
 
-            <div class="grid111">
-                <section class="card">
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(1200px 800px at 20% 10%, rgba(99, 102, 241, .18), transparent 55%),
+        radial-gradient(900px 700px at 80% 25%, rgba(34, 197, 94, .14), transparent 55%),
+        radial-gradient(900px 700px at 40% 95%, rgba(245, 158, 11, .10), transparent 55%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
 
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      backdrop-filter: blur(12px);
+      background: linear-gradient(to bottom, rgba(0, 0, 0, .25), rgba(0, 0, 0, 0));
+      border-bottom: 1px solid var(--line);
+    }
 
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th style="width:55px;">ID</th>
-                                <th>Name</th>
-                                <th style=" ">Room</th>
-                                <th style=" ">ON Code</th>
-                                <th style=" ">OFF Code</th>
-                                <th style=" ">Status</th>
-                                <th style=" ">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbody">
-                            <tr>
-                                <td colspan="7" class="hint">Loading…</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </section>
+    .wrap {
+      max-width: 1420px;
+      margin: 0 auto;
+      padding: 16px;
+    }
 
-                <aside class="card" style="display:none">
-                    <div class="cardHead">
-                        <div>
-                            <h2>Activity</h2>
-                            <div class="hint">UI log</div>
-                        </div>
-                        <button id="btnClearLog">Clear</button>
-                    </div>
-                    <div id="log" class="log">—</div>
-                </aside>
-            </div>
+    .topbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
 
-            <!-- Modal -->
-            <div id="modalBack" class="modalBack">
-                <div class="modal" role="dialog" aria-modal="true">
-                    <div class="modalHeader">
-                        <div>
-                            <strong>Add New Device</strong>
-                            <!-- <div class="sub">
-                                Scanning is already running in device <span class="mono">loop()</span>.
-                                This popup will automatically capture the next received RF code for each step.
-                            </div> -->
-                        </div>
-                        <button id="btnClose" style="color:red" class="small">Close(X)</button>
-                    </div>
+    .title h1 {
+      margin: 0;
+      font-size: 18px;
+    }
 
-                    <div class="modalBody">
-                        <div class="stepCard">
-                            <div class="stepTop">
-                                <div class="msg">
-                                    <div style="font-weight: bold;" id="stepTitle">Step 1: Press SOS ON button </div>
+    .title .sub {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
 
-                                    <div style="font-weight: bold;" id="stepTitle2"> </div>
-                                    <div style="font-weight: bold;" id="stepTitle3"> </div>
-                                    <div id="stepText">Waiting for a new RF code… once received, it will be recorded as
-                                        <b>SOS
-                                            ON</b>.
-                                    </div>
-                                </div>
-                                <div class="statusPill">
-                                    <span id="stepDot" class="dot"></span>
-                                    <span id="stepState">Waiting</span>
-                                </div>
-                            </div>
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
 
-                            <div class="codeRow">
-                                <div class="codeBox">
-                                    <div class="lbl">SOS ON <span id="stepDotSosOn" class="dot ok">
-                                        </span>
-                                    </div>
-                                    <div class="code" id="onCode">—</div>
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--card);
+      font-size: 12px;
+      color: var(--muted);
+    }
 
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(245, 158, 11, .95);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, .15);
+    }
 
-                                    <div class="meta" style="display:none" id="onMeta">bits: — | proto: —</div>
-                                </div>
-                                <div class="codeBox">
-                                    <div class="lbl">SOS OFF <span id="stepDotSosoff" class="dot ok"> </span>
-                                    </div>
-                                    <div class="code" id="offCode">—</div>
+    .dot.ok {
+      background: rgba(34, 197, 94, .95);
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, .18);
+    }
 
+    .dot.bad {
+      background: rgba(239, 68, 68, .95);
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, .15);
+    }
 
-                                    <div class="meta" style="display:none" id="offMeta">bits: — | proto: —</div>
-                                </div>
-                            </div>
-                        </div>
+    button {
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: .15s ease;
+    }
 
-                        <!-- Show these ONLY after OFF captured -->
-                        <div id="purposeBlock" class="stepCard" style="display:none;">
-                            <div class="msg">
-                                <b>Enter Device Name </b>
-                                <div class="hint" style="display:none;">Example: “Room 1 SOS”, “Toilet SOS”, “Nurse Call
-                                    Room 12”</div>
-                            </div>
+    button:hover {
+      background: var(--card2);
+    }
 
-                            <div class="formRow">
-                                <label>Device Name</label>
-                                <input id="name" style="color:black!important" placeholder="Purpose / Device name" />
-                            </div>
+    button.primary {
+      border-color: rgba(99, 102, 241, .35);
+      background: rgba(99, 102, 241, .16);
+    }
 
-                            <div class="formRow">
-                                <label>Room ID</label>
-                                <input id="roomId" style="color:black!important" type="number" min="0"
-                                    placeholder="1" />
-                            </div>
+    button.danger {
+      border-color: rgba(239, 68, 68, .35);
+      background: rgba(239, 68, 68, .12);
+    }
 
-                        </div>
-                    </div>
+    button.small {
+      padding: 7px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+    }
 
-                    <div class="modalFooter">
-                        <div style="color:green" class="hint" id="footerHint" style="display:none;">
-                            <!-- Step 1 is active: press SOS ON button. -->
-                        </div>
-                        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                            <button id="btnReset" class="small">Reset</button>
-                            <button id="btnSave" class="success" disabled style="background-color: green;">Save</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
 
-            <div id="toast" class="toast">
-                <strong id="toastTitle">Info</strong>
-                <div id="toastMsg" class="msg"></div>
-            </div>
+    .grid {
+      display: grid;
+      grid-template-columns: 1.6fr .65fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    @media (max-width:1100px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .cardHead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .cardHead h2 {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .mono {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      word-break: break-all;
+    }
+
+    .tableWrap {
+      overflow: auto;
+    }
+
+    .table {
+      width: 100%;
+      min-width: 1080px;
+      border-collapse: collapse;
+    }
+
+    .table th,
+    .table td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    .table th {
+      font-size: 12px;
+      color: black;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .06);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .miniDot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(245, 158, 11, .95);
+    }
+
+    .chip.on .miniDot {
+      background: rgba(239, 68, 68, .95);
+    }
+
+    .chip.off .miniDot {
+      background: rgba(34, 197, 94, .95);
+    }
+
+    .log {
+      max-height: 520px;
+      overflow: auto;
+      padding: 10px 12px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      white-space: pre-wrap;
+      line-height: 1.35;
+    }
+
+    .modalBack {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .58);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      padding: 18px;
+    }
+
+    .modal {
+      width: min(980px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 28px 75px rgba(0, 0, 0, .5);
+      overflow: hidden;
+      background: color-mix(in oklab, var(--bg) 78%, black 22%);
+    }
+
+    .modalHeader {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      gap: 12px;
+    }
+
+    .modalHeader strong {
+      font-size: 14px;
+    }
+
+    .modalHeader .sub {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+      margin-top: 4px;
+    }
+
+    .modalBody {
+      padding: 14px 16px 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .04);
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .panelTop {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .panelTop .msg b {
+      font-size: 13px;
+    }
+
+    .panelTop .msg div {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 3px;
+      line-height: 1.35;
+    }
+
+    .captureGrid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .captureBox {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .04);
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .codeView {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text);
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .05);
+      min-width: 260px;
+      min-height: 39px;
+      display: flex;
+      align-items: center;
+    }
+
+    .capState {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .tinyDot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, .9);
+      display: inline-block;
+    }
+
+    .tinyDot.ok {
+      background: rgba(34, 197, 94, .95);
+    }
+
+    .purposeBlock {
+      display: block;
+      margin-top: 6px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .03);
+      padding: 12px;
+    }
+
+    .purposeGrid {
+      display: grid;
+      grid-template-columns: 1fr 180px;
+      gap: 10px;
+    }
+
+    @media (max-width:700px) {
+      .purposeGrid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    label {
+      font-size: 12px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .05);
+      color: var(--text);
+      outline: none;
+    }
+
+    .modalFooter {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+      background: rgba(255, 255, 255, .02);
+      flex-wrap: wrap;
+    }
+
+    .toast {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 20;
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      display: none;
+      width: min(420px, calc(100% - 32px));
+    }
+
+    .toast strong {
+      font-size: 13px;
+    }
+
+    .toast .msg {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="wrap">
+      <div class="topbar">
+        <div class="title">
+          <h1>SOS Devices</h1>
+          <div class="sub">
+            3-button capture flow:
+            <b>SOS ON</b> →
+            <b>SOS OFF</b> →
+            <b>SOS ON Thread</b> →
+            enter <b>Device Name</b> and <b>Room ID</b> →
+            <b>Save Device</b>.<br>
+            Both <b>SOS ON</b> and <b>SOS ON Thread</b> are treated functionally as <b>ON</b>.
+          </div>
         </div>
+        <div class="actions">
+          <span class="pill"><span id="connDot" class="dot"></span><span id="connText">Checking…</span></span>
+          <button id="btnReload" class="primary">Reload</button>
+          <button id="btnOpen" class="primary">Add / Update SOS Device</button>
+        </div>
+      </div>
     </div>
-</div>
-<script>
+  </header>
 
-    document.addEventListener("DOMContentLoaded", () => {
-        setTimeout(() => {
-            setActiveTab(document.getElementById("sostab"));
-        }, 1000);
-    });
+  <main class="wrap">
+    <div class="grid1">
+      <section class="card" style="width: 100%;">
+        <div class="cardHead">
+          <div>
+            <h2>Registered SOS Devices</h2>
+            <div class="hint">
+              Stored values:
+              <span class="mono">onCode</span>,
+              <span class="mono">offCode</span>,
+              <span class="mono">threadOnCode</span>,
+              <span class="mono">status</span>.
+            </div>
+          </div>
+          <div class="hint"><span id="count">0</span> devices</div>
+        </div>
 
-</script>
-<script src="sos.js"></script>
+        <div class="tableWrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width:55px;">ID</th>
+                <th>Name</th>
+                <th style="width:80px;">Room</th>
+                <th style="width:220px;">SOS ON</th>
+                <th style="width:220px;">SOS OFF</th>
+                <th style="width:220px;">SOS ON Thread</th>
+                <th style="width:110px;">Status</th>
+                <th style="width:120px;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="tbody">
+              <tr>
+                <td colspan="8" class="hint">Loading…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside class="card" style="display: none;">
+        <div class="cardHead">
+          <div>
+            <h2>Activity</h2>
+            <div class="hint">UI log</div>
+          </div>
+          <button id="btnClearLog">Clear</button>
+        </div>
+        <div id="log" class="log">—</div>
+      </aside>
+    </div>
+  </main>
+
+  <div id="modalBack" class="modalBack">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modalHeader">
+        <div>
+          <strong>Add / Update SOS Device</strong>
+          <div class="sub">
+            After popup opens, receiver starts listening automatically.
+            Press the remote buttons in sequence:
+            <b>SOS ON</b>, then <b>SOS OFF</b>, then <b>SOS ON Thread</b>.
+          </div>
+        </div>
+        <button id="btnClose" class="small">Close</button>
+      </div>
+
+      <div class="modalBody">
+        <div class="panel">
+          <div class="panelTop">
+            <div class="msg">
+              <b id="stepTitle">Step 1: Press SOS ON button on Device</b>
+              <div id="stepText">Waiting for a new RF code…</div>
+            </div>
+            <div class="pill">
+              <span class="dot" id="stepDot"></span>
+              <span id="stepState">Waiting</span>
+            </div>
+          </div>
+
+          <div class="captureGrid">
+            <div class="captureBox">
+              <div>
+                <div class="hint">SOS ON</div>
+                <div class="codeView" id="onCode">—</div>
+                <div class="mono" id="onMeta">bits: — | proto: —</div>
+                <div class="capState">
+                  <span id="stepDotSosOn" class="tinyDot" style="display:none;"></span>
+                  <span>Captured</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="captureBox">
+              <div>
+                <div class="hint">SOS OFF</div>
+                <div class="codeView" id="offCode">—</div>
+                <div class="mono" id="offMeta">bits: — | proto: —</div>
+                <div class="capState">
+                  <span id="stepDotSosOff" class="tinyDot" style="display:none;"></span>
+                  <span>Captured</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="captureBox">
+              <div>
+                <div class="hint">SOS ON Thread</div>
+                <div class="codeView" id="threadOnCode">—</div>
+                <div class="mono" id="threadOnMeta">bits: — | proto: —</div>
+                <div class="capState">
+                  <span id="stepDotThreadOn" class="tinyDot" style="display:none;"></span>
+                  <span>Captured</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="purposeBlock" class="purposeBlock" style="display:block;">
+            <div class="purposeGrid">
+              <div>
+                <label for="name">Device Name</label>
+                <input id="name" placeholder="e.g., Room 1 SOS" />
+              </div>
+              <div>
+                <label for="roomId">Room ID</label>
+                <input id="roomId" type="number" min="0" placeholder="1" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modalFooter">
+        <div class="hint" id="footerHint">Step 1 is active: press SOS ON button.</div>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <button id="btnReset" class="small">Reset</button>
+          <button id="btnSave" class="primary" disabled>Save Device</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">
+    <strong id="toastTitle">Info</strong>
+    <div id="toastMsg" class="msg"></div>
+  </div>
+
+  <script src="/sos.js"></script>
+</body>
+
+</html>

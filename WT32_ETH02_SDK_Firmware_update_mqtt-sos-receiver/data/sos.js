@@ -1,7 +1,7 @@
 // APIs:
 // - GET  /api/sos/devices
-// - GET  /api/sos/rf/last            -> {seq, code, bits, proto, pulse, atMs}
-// - POST /api/sos/devices/upsert     -> save add/update to config.json
+// - GET  /api/sos/rf/last
+// - POST /api/sos/devices/upsert
 // - DELETE /api/sos/devices/delete?id=1
 const API = {
   LIST: "/api/sos/devices",
@@ -16,31 +16,35 @@ function escapeHtml(s) {
   return String(s).replace(
     /[&<>"']/g,
     (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
         c
-      ])
+      ],
   );
 }
+
 function logLine(line) {
   const el = $("log");
   const now = new Date().toLocaleString();
-  if (el && el.textContent.trim() === "—") el.textContent = "";
   if (!el) return;
+  if (el.textContent.trim() === "—") el.textContent = "";
   el.textContent += `[${now}] ${line}\n`;
   el.scrollTop = el.scrollHeight;
 }
+
 function toast(title, msg, ms = 2800) {
   $("toastTitle").textContent = title;
-  $("toastMsg").textContent = msg;
+  $("toastMsg").textContent = msg || "";
   const t = $("toast");
   t.style.display = "block";
   clearTimeout(toast._t);
   toast._t = setTimeout(() => (t.style.display = "none"), ms);
 }
+
 function setConn(state, msg) {
-  const dot = $("connDot"),
-    txt = $("connText");
+  const dot = $("connDot");
+  const txt = $("connText");
   if (!dot || !txt) return;
+
   txt.textContent = msg;
   dot.classList.remove("ok", "bad");
   if (state === "ok") dot.classList.add("ok");
@@ -52,18 +56,22 @@ async function apiGet(url) {
   if (!r.ok) throw new Error(`GET ${url} failed (${r.status})`);
   return r.json();
 }
+
 async function apiPost(url, body) {
   const r = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body || {}),
   });
+
   if (!r.ok) {
     const t = await r.text().catch(() => "");
     throw new Error(`POST ${url} failed (${r.status}) ${t}`);
   }
+
   return r.json().catch(() => ({}));
 }
+
 async function apiDelete(url) {
   const r = await fetch(url, { method: "DELETE" });
   if (!r.ok) {
@@ -75,18 +83,32 @@ async function apiDelete(url) {
 
 // ===== List/Table =====
 let devices = [];
+
 function statusChip(status) {
   const s = String(status || "").toUpperCase();
-  if (s === "ON")
+
+  if (s === "ON") {
     return `<span class="chip on"><span class="miniDot"></span>ON</span>`;
-  if (s === "OFF")
+  }
+  if (s === "OFF") {
     return `<span class="chip off"><span class="miniDot"></span>OFF</span>`;
+  }
+  if (s === "THREAD_ON") {
+    return `<span class="chip thread"><span class="miniDot"></span>THREAD ON</span>`;
+  }
+
   return `<span class="chip"><span class="miniDot"></span>—</span>`;
 }
 
 function render() {
   $("count").textContent = String(devices.length);
   const tb = $("tbody");
+
+  if (!devices.length) {
+    tb.innerHTML = `<tr><td colspan="8" class="hint">No SOS devices registered.</td></tr>`;
+    return;
+  }
+
   tb.innerHTML = devices
     .map(
       (d) => `
@@ -96,12 +118,13 @@ function render() {
           <td>${escapeHtml(d.roomId ?? "")}</td>
           <td><span class="mono">${escapeHtml(d.onCode ?? "")}</span></td>
           <td><span class="mono">${escapeHtml(d.offCode ?? "")}</span></td>
+          <td><span class="mono">${escapeHtml(d.threadOnCode ?? "")}</span></td>
           <td>${statusChip(d.status)}</td>
-          <td><button class="small danger" onclick="deleteDevice(${Number(
-            d.id
-          )})">Delete</button></td>
+          <td>
+            <button class="small danger" onclick="deleteDevice(${Number(d.id)})">Delete</button>
+          </td>
         </tr>
-      `
+      `,
     )
     .join("");
 }
@@ -112,7 +135,7 @@ async function loadDevices() {
     devices = Array.isArray(data) ? data : data.devices || [];
     setConn("ok", "Connected");
     render();
-    logLine(`Loaded ${devices.length} Device(s)`);
+    logLine(`Loaded ${devices.length} device(s)`);
   } catch (e) {
     setConn("bad", "Disconnected");
     devices = [];
@@ -125,6 +148,7 @@ async function loadDevices() {
 async function deleteDevice(id) {
   if (!Number.isFinite(id) || id <= 0) return;
   if (!confirm(`Delete device id ${id}?`)) return;
+
   try {
     await apiDelete(`${API.DEL}?id=${encodeURIComponent(String(id))}`);
     toast("Deleted", `Device ${id} removed.`);
@@ -139,68 +163,107 @@ window.deleteDevice = deleteDevice;
 
 // ===== Popup Auto-capture Flow =====
 let pollTimer = null;
-let baseSeq = 0;
 let lastSeenSeq = 0;
 
-let step = 1; // 1=ON wait (required), 2=OFF wait (optional), 3=purpose input
-let capturedOn = null; // {code,bits,proto}
-let capturedOff = null; // OPTIONAL {code,bits,proto}
+// 1 = wait SOS ON, 2 = wait SOS OFF, 3 = wait THREAD ON, 4 = details/save
+let step = 1;
 
-let existingMatchId = 0; // if ON/OFF matches existing device, we update it
+let capturedOn = null;
+let capturedOff = null;
+let capturedThreadOn = null;
+let existingMatchId = 0;
+
+function clearStepDot() {
+  $("stepDot").classList.remove("ok", "bad");
+}
+
+function setTinyDot(elId, ok) {
+  const el = $(elId);
+  if (!el) return;
+  el.style.display = ok ? "inline-block" : "none";
+  el.classList.toggle("ok", !!ok);
+}
+
+function normalizeCode(v) {
+  return String(v || "").trim();
+}
+
+function findExistingByAnyCode(codeStr) {
+  const c = normalizeCode(codeStr);
+  if (!c) return 0;
+
+  const d = devices.find(
+    (x) =>
+      normalizeCode(x.onCode) === c ||
+      normalizeCode(x.offCode) === c ||
+      normalizeCode(x.threadOnCode) === c,
+  );
+
+  return d ? Number(d.id) : 0;
+}
+
+function fillFromExistingIfMatched(id) {
+  if (!id) return;
+
+  const ex = devices.find((x) => Number(x.id) === id);
+  if (!ex) return;
+
+  if (!$("name").value.trim()) $("name").value = ex.name || "";
+  if (!$("roomId").value.trim()) $("roomId").value = ex.roomId || 0;
+
+  logLine(`Matched existing device id=${id} (will update)`);
+}
+
+function validateSaveEnabled() {
+  const name = $("name").value.trim();
+  const canSave = !!capturedOn && !!capturedOff && !!capturedThreadOn && !!name;
+  $("btnSave").disabled = !canSave;
+}
 
 function setStepUI() {
-  const dot = $("stepDot");
-  dot.classList.remove("ok", "bad");
+  clearStepDot();
+
+  // Always keep name / room visible
+  $("purposeBlock").style.display = "block";
 
   if (step === 1) {
-    toast("Step 1: Press SOS ON button on Device", "", 3000);
-
-    $("stepTitle").textContent =
-      "Step 1: Press SOS ON button on Device (Required)";
-    $("stepTitle2").textContent = "";
-    $("stepTitle3").textContent = "";
+    $("stepTitle").textContent = "Step 1: Press SOS ON button on Device";
     $("stepText").innerHTML =
-      "Waiting for a new RF code… once received, it will be recorded as <b>SOS ON</b>.";
+      "Waiting for a new RF code. Once received, it will be recorded as <b>SOS ON</b>.";
     $("stepState").textContent = "Waiting";
     $("footerHint").textContent = "Step 1 is active: press SOS ON button.";
-    $("purposeBlock").style.display = "none";
-    $("btnSave").disabled = true;
+    validateSaveEnabled();
+    return;
   }
 
   if (step === 2) {
-    toast(
-      "Step 2: Press SOS OFF button (Optional) OR Save without OFF",
-      "",
-      3000
-    );
-
-    // Keep your extra title line
-    $("stepTitle2").textContent =
-      "Step 2: Press SOS OFF button on Device (Optional)";
-    $("stepText").innerHTML =
-      "Press OFF if supported. Otherwise enter details below and click <b>Save</b> without OFF.";
-    $("stepState").textContent = "Optional";
-    $("footerHint").textContent =
-      "OFF is optional. Enter Device Name and click Save (or press OFF then Save).";
-
-    // Show purpose immediately after ON captured
-    $("purposeBlock").style.display = "";
-    // Save will be enabled by validateSaveEnabled()
+    $("stepTitle").textContent = "Step 2: Press SOS OFF button on Device";
+    $("stepText").innerHTML = "SOS ON captured. Waiting for <b>SOS OFF</b>.";
+    $("stepState").textContent = "Waiting";
+    $("footerHint").textContent = "Step 2 is active: press SOS OFF button.";
     validateSaveEnabled();
+    return;
   }
 
   if (step === 3) {
-    toast("Step 3: Enter Device Name And Room Number", "", 3000);
-
-    $("stepTitle3").textContent = "Ready to Save";
+    $("stepTitle").textContent = "Step 3: Press SOS ON Thread button on Device";
     $("stepText").innerHTML =
-      "SOS <b>ON</b> recorded. SOS <b>OFF</b> is optional. Enter Device Name (Purpose) and Save.";
-    $("stepState").textContent = "Ready";
-    $("footerHint").textContent = "Enter Device Name (Purpose) and click Save.";
-    $("purposeBlock").style.display = "";
-
+      "SOS ON and SOS OFF captured. Waiting for <b>SOS ON Thread</b>. Functionally this is also treated as <b>ON</b>.";
+    $("stepState").textContent = "Waiting";
+    $("footerHint").textContent =
+      "Step 3 is active: press SOS ON Thread button.";
     validateSaveEnabled();
-    dot.classList.add("ok");
+    return;
+  }
+
+  if (step === 4) {
+    $("stepTitle").textContent = "All required codes captured";
+    $("stepText").innerHTML =
+      "Enter <b>Device Name</b> and optional <b>Room ID</b>, then click <b>Save Device</b>.";
+    $("stepState").textContent = "Ready";
+    $("footerHint").textContent = "Enter details and click Save Device.";
+    $("stepDot").classList.add("ok");
+    validateSaveEnabled();
   }
 }
 
@@ -208,99 +271,80 @@ function resetPopup() {
   step = 1;
   capturedOn = null;
   capturedOff = null;
+  capturedThreadOn = null;
   existingMatchId = 0;
-
-  $("stepTitle").textContent = "";
-  $("stepTitle2").textContent = "";
-  $("stepTitle3").textContent = "";
 
   $("onCode").textContent = "—";
   $("offCode").textContent = "—";
-
-  $("stepDotSosOn").style.display = "none";
-  $("stepDotSosoff").style.display = "none";
+  $("threadOnCode").textContent = "—";
 
   $("onMeta").textContent = "bits: — | proto: —";
   $("offMeta").textContent = "bits: — | proto: —";
+  $("threadOnMeta").textContent = "bits: — | proto: —";
+
   $("name").value = "";
   $("roomId").value = "";
+
+  setTinyDot("stepDotSosOn", false);
+  setTinyDot("stepDotSosOff", false);
+  setTinyDot("stepDotThreadOn", false);
 
   setStepUI();
 }
 
-function findExistingByAnyCode(codeStr) {
-  const c = String(codeStr || "").trim();
-  if (!c) return 0;
-  const d = devices.find(
-    (x) => String(x.onCode || "") === c || String(x.offCode || "") === c
+function codeAlreadyCaptured(code) {
+  const c = normalizeCode(code);
+  return (
+    (capturedOn && normalizeCode(capturedOn.code) === c) ||
+    (capturedOff && normalizeCode(capturedOff.code) === c) ||
+    (capturedThreadOn && normalizeCode(capturedThreadOn.code) === c)
   );
-  return d ? Number(d.id) : 0;
-}
-
-// Enable Save when ON is captured + name entered (OFF optional)
-function validateSaveEnabled() {
-  const name = $("name").value.trim();
-  const canSave = !!capturedOn && !!name;
-  $("btnSave").disabled = !canSave;
 }
 
 async function startPolling() {
-  // read current seq as baseline, so we only capture "new presses" after popup opens
   const rf = await apiGet(API.RF_LAST);
-  baseSeq = Number(rf.seq || 0);
-  lastSeenSeq = baseSeq;
-  logLine(`Popup baseline seq=${baseSeq}`);
+  lastSeenSeq = Number(rf.seq || 0);
+  logLine(`Popup baseline seq=${lastSeenSeq}`);
+
+  stopPolling();
 
   pollTimer = setInterval(async () => {
     try {
       const d = await apiGet(API.RF_LAST);
       const seq = Number(d.seq || 0);
-      const code = String(d.code || "").trim();
-      if (!code || seq <= lastSeenSeq) return;
+      const code = normalizeCode(d.code);
 
+      if (!code || seq <= lastSeenSeq) return;
       lastSeenSeq = seq;
 
-      // Step 1: capture ON (required)
       if (step === 1) {
         capturedOn = {
           code,
           bits: Number(d.bits || 0),
           proto: Number(d.proto || 0),
         };
+
         $("onCode").textContent = code;
-        $("stepDotSosOn").style.display = "inline-block";
-        $(
-          "onMeta"
-        ).textContent = `bits: ${capturedOn.bits} | proto: ${capturedOn.proto}`;
+        $("onMeta").textContent =
+          `bits: ${capturedOn.bits} | proto: ${capturedOn.proto}`;
+        setTinyDot("stepDotSosOn", true);
 
         $("stepDot").classList.add("ok");
         $("stepState").textContent = "SOS ON recorded";
-        toast("Success", "SOS ON is recorded.", 2200);
+        toast("Captured", "SOS ON recorded.", 2000);
         logLine(`Captured ON code=${code} seq=${seq}`);
 
-        // if matches existing device, plan to update it
         existingMatchId = findExistingByAnyCode(code);
-        if (existingMatchId) {
-          const ex = devices.find((x) => Number(x.id) === existingMatchId);
-          if (ex) {
-            $("name").value = ex.name || "";
-            $("roomId").value = ex.roomId || 0;
-            logLine(
-              `Matched existing device id=${existingMatchId} (will update)`
-            );
-          }
-        }
+        fillFromExistingIfMatched(existingMatchId);
 
-        // Move to OFF optional step, and show form
         step = 2;
         setStepUI();
         return;
       }
 
-      // Step 2: capture OFF (optional) — only if different from ON
       if (step === 2) {
-        if (capturedOn && code === capturedOn.code) {
-          logLine(`Ignored OFF capture because code == ON code (${code})`);
+        if (capturedOn && normalizeCode(capturedOn.code) === code) {
+          logLine(`Ignored OFF capture because code == ON (${code})`);
           return;
         }
 
@@ -309,54 +353,58 @@ async function startPolling() {
           bits: Number(d.bits || 0),
           proto: Number(d.proto || 0),
         };
+
         $("offCode").textContent = code;
-        $("stepDotSosoff").style.display = "inline-block";
-        $(
-          "offMeta"
-        ).textContent = `bits: ${capturedOff.bits} | proto: ${capturedOff.proto}`;
+        $("offMeta").textContent =
+          `bits: ${capturedOff.bits} | proto: ${capturedOff.proto}`;
+        setTinyDot("stepDotSosOff", true);
 
         $("stepDot").classList.add("ok");
         $("stepState").textContent = "SOS OFF recorded";
-        toast("Success", "SOS OFF is recorded.", 2200);
+        toast("Captured", "SOS OFF recorded.", 2000);
         logLine(`Captured OFF code=${code} seq=${seq}`);
 
-        // if OFF matches existing and ON didn't, still update that device
         if (!existingMatchId) {
           existingMatchId = findExistingByAnyCode(code);
-          if (existingMatchId) {
-            const ex = devices.find((x) => Number(x.id) === existingMatchId);
-            if (ex) {
-              $("name").value = ex.name || "";
-              $("roomId").value = ex.roomId || 0;
-              logLine(
-                `Matched existing device id=${existingMatchId} (will update)`
-              );
-            }
-          }
+          fillFromExistingIfMatched(existingMatchId);
         }
 
-        // Go to step 3 (details) but OFF is already captured
         step = 3;
         setStepUI();
         return;
       }
 
-      // Step 3: still allow OFF capture if not yet captured (optional convenience)
-      if (step === 3 && !capturedOff) {
-        if (capturedOn && code === capturedOn.code) return;
+      if (step === 3) {
+        if (codeAlreadyCaptured(code)) {
+          logLine(
+            `Ignored THREAD ON capture because code already used (${code})`,
+          );
+          return;
+        }
 
-        capturedOff = {
+        capturedThreadOn = {
           code,
           bits: Number(d.bits || 0),
           proto: Number(d.proto || 0),
         };
-        $("offCode").textContent = code;
-        $("stepDotSosoff").style.display = "inline-block";
-        $(
-          "offMeta"
-        ).textContent = `bits: ${capturedOff.bits} | proto: ${capturedOff.proto}`;
-        toast("Captured", "SOS OFF captured (optional).", 2000);
-        logLine(`Captured OFF (late) code=${code} seq=${seq}`);
+
+        $("threadOnCode").textContent = code;
+        $("threadOnMeta").textContent =
+          `bits: ${capturedThreadOn.bits} | proto: ${capturedThreadOn.proto}`;
+        setTinyDot("stepDotThreadOn", true);
+
+        $("stepDot").classList.add("ok");
+        $("stepState").textContent = "SOS ON Thread recorded";
+        toast("Captured", "SOS ON Thread recorded.", 2000);
+        logLine(`Captured THREAD ON code=${code} seq=${seq}`);
+
+        if (!existingMatchId) {
+          existingMatchId = findExistingByAnyCode(code);
+          fillFromExistingIfMatched(existingMatchId);
+        }
+
+        step = 4;
+        setStepUI();
       }
     } catch (e) {
       logLine(`RF poll error: ${e.message}`);
@@ -370,44 +418,54 @@ function stopPolling() {
 }
 
 async function saveDevice() {
-  // OFF is optional: only ON required
   if (!capturedOn) {
     toast("Missing", "Please capture SOS ON first.", 3500);
+    return;
+  }
+  if (!capturedOff) {
+    toast("Missing", "Please capture SOS OFF second.", 3500);
+    return;
+  }
+  if (!capturedThreadOn) {
+    toast("Missing", "Please capture SOS ON Thread third.", 3500);
     return;
   }
 
   const name = $("name").value.trim();
   if (!name) {
-    toast("Missing", "Please enter Device Name (Purpose).", 3500);
+    toast("Missing", "Please enter Device Name.", 3500);
     return;
   }
 
   const roomId = Number($("roomId").value) || 0;
 
   const payload = {
-    id: existingMatchId || 0, // 0 => add new, >0 => update existing
+    id: existingMatchId || 0,
     name,
     roomId,
+
     onCode: capturedOn.code,
     onBits: capturedOn.bits,
     onProto: capturedOn.proto,
 
-    // OFF optional
-    offCode: capturedOff ? capturedOff.code : "",
-    offBits: capturedOff ? capturedOff.bits : 0,
-    offProto: capturedOff ? capturedOff.proto : 0,
+    offCode: capturedOff.code,
+    offBits: capturedOff.bits,
+    offProto: capturedOff.proto,
+
+    threadOnCode: capturedThreadOn.code,
+    threadOnBits: capturedThreadOn.bits,
+    threadOnProto: capturedThreadOn.proto,
   };
 
   try {
     $("btnSave").disabled = true;
+
     const res = await apiPost(API.UPSERT, payload);
     const savedId = Number((res.device && res.device.id) || payload.id || 0);
 
     toast("Saved", savedId ? `Saved device id=${savedId}` : "Saved", 2200);
     logLine(
-      `Saved device (id=${savedId || "new"}) on=${payload.onCode} off=${
-        payload.offCode || "(none)"
-      }`
+      `Saved device (id=${savedId || "new"}) on=${payload.onCode} off=${payload.offCode} thread=${payload.threadOnCode}`,
     );
 
     await loadDevices();
@@ -419,11 +477,16 @@ async function saveDevice() {
   }
 }
 
-// ===== Modal open/close =====
+// ===== Modal =====
 async function openModal() {
   $("modalBack").style.display = "flex";
   resetPopup();
-  await startPolling();
+  try {
+    await startPolling();
+  } catch (e) {
+    toast("Open failed", e.message, 4500);
+    logLine(`ERROR: ${e.message}`);
+  }
 }
 
 function closeModal() {
@@ -438,26 +501,23 @@ $("btnClose").addEventListener("click", closeModal);
 $("modalBack").addEventListener("click", (e) => {
   if (e.target === $("modalBack")) closeModal();
 });
-
 $("btnClearLog").addEventListener("click", () => ($("log").textContent = "—"));
 $("btnReset").addEventListener("click", resetPopup);
 $("btnSave").addEventListener("click", saveDevice);
-
-// Enable/disable Save as user types name (OFF optional)
 $("name").addEventListener("input", validateSaveEnabled);
 $("roomId").addEventListener("input", validateSaveEnabled);
 
-// Init
+// ===== Init =====
 loadDevices();
 
-// Auto-refresh table when RF seq changes (your existing logic kept)
+// optional auto refresh when RF seq changes
 let lastRfSeq = -1;
 let refreshInFlight = false;
 
 async function watchRfSeq() {
   try {
-    const d = await fetch("/api/sos/rf/last", { cache: "no-store" }).then((r) =>
-      r.json()
+    const d = await fetch(API.RF_LAST, { cache: "no-store" }).then((r) =>
+      r.json(),
     );
     const seq = Number(d.seq || 0);
 
